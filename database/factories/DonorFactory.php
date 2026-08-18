@@ -10,7 +10,7 @@ class DonorFactory extends Factory
     {
         return [
             'user_id' => \App\Models\User::factory(),
-            'blood_group_id' => \App\Models\BloodGroup::factory(),
+            'blood_group_id' => fn () => \App\Models\BloodGroup::inRandomOrder()->first()?->id ?? \App\Models\BloodGroup::factory(),
             'gender' => fake()->randomElement(['male', 'female']),
             'date_of_birth' => fake()->date(),
             'contact_number' => fake()->phoneNumber(),

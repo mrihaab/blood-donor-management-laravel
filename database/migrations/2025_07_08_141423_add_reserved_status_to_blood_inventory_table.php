@@ -12,10 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('blood_inventory', function (Blueprint $table) {
-            // Modify the status enum to include 'reserved'
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE blood_inventory MODIFY COLUMN status ENUM('available', 'expired', 'used', 'reserved') DEFAULT 'available'");
-        });
+        }
     }
 
     /**
@@ -23,9 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('blood_inventory', function (Blueprint $table) {
-            // Revert status enum back to original values
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE blood_inventory MODIFY COLUMN status ENUM('available', 'expired', 'used') DEFAULT 'available'");
-        });
+        }
     }
 };

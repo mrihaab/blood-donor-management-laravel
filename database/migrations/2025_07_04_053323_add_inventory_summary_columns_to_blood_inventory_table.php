@@ -21,7 +21,7 @@ return new class extends Migration
         DB::statement("
             UPDATE blood_inventory 
             SET units_available = CASE 
-                WHEN status = 'available' AND expiry_date > NOW() THEN 1
+                WHEN status = 'available' AND expiry_date > CURRENT_TIMESTAMP THEN 1
                 ELSE 0 
             END
         ");
