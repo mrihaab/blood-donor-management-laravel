@@ -9,6 +9,14 @@ class DonorSeeder extends Seeder
 {
     public function run()
     {
-        Donor::factory(50)->create(); // Create 50 donor records
+        $donorUser = \App\Models\User::factory()->create([
+            'name' => 'Test Donor',
+            'email' => 'donor@example.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'donor',
+        ]);
+        Donor::factory()->create(['user_id' => $donorUser->id]);
+
+        Donor::factory(49)->create(); // Create 49 more random donor records
     }
 }

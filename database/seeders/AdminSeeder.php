@@ -13,6 +13,7 @@ class AdminSeeder extends Seeder
             'user_id' => \App\Models\User::factory()->create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'role' => 'admin',
             ]),
             'position' => 'System Administrator',
