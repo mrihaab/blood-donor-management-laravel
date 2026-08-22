@@ -46,10 +46,13 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Fix permissions for storage and bootstrap/cache
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
+# Create necessary storage directories
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache database
+
+# Fix permissions for storage, cache, and database
+RUN chmod -R 777 storage bootstrap/cache database
 
 EXPOSE 80
 
-# Run entrypoint script
-CMD touch database/database.sqlite && php artisan migrate --force --seed && apache2-foreground
+# Run entrypoint script with proper ownership and permissions
+CMD touch database/database.sqlite && chmod 777 database/database.sqlite && php artisan migrate --force --seed && php artisan config:clear && apache2-foreground
