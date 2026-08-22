@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\BloodGroup;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +20,7 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register'); // Adjust this path if needed
+        return Inertia::render('Auth/Register');
     }
 
     /**
@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -36,17 +36,37 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'donor', // Add role here as you had before
+            'status' => 'active',
+        ]);
+        $user->role = 'donor';
+        $user->save();
+
+        // Create associated Donor profile record
+        $bloodGroup = BloodGroup::first() ?? BloodGroup::firstOrCreate(
+            ['name' => 'A+'],
+            ['description' => 'A positive']
+        );
+
+        $user->donor()->create([
+            'blood_group_id' => $bloodGroup->id,
+            'contact_number' => 'Not Provided',
+            'address' => 'Please complete your profile address',
+            'city' => 'Not Provided',
+            'state' => 'Not Provided',
+            'zip_code' => '00000',
+            'gender' => 'other',
+            'date_of_birth' => '2000-01-01',
+            'is_available' => true,
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return Inertia::location(route('donor.dashboard'));
     }
 }

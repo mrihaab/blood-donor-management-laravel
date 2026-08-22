@@ -90,11 +90,6 @@ const submit = () => {
                 </PrimaryButton>
             </div>
 
-            <div class="mt-6 text-center border-t pt-4">
-                <a href="/login-as" class="text-sm font-semibold text-red-600 hover:text-red-700">
-                    Switch to Quick Role Login Portal &rarr;
-                </a>
-            </div>
         </form>
     </GuestLayout>
 </template>

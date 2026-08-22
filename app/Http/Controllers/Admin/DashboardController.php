@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Donor;
+use App\Models\BloodGroup;
 use App\Models\BloodRequest;
 use App\Models\BloodInventory;
 use App\Models\Donation;
@@ -27,34 +28,39 @@ class DashboardController extends Controller
         $totalDonations = Donation::count();
         $totalAdmins = User::where('role', 'admin')->count();
 
-        // Blood Inventory with Low Stock Alerts
-        $bloodInventory = BloodInventory::with('bloodGroup')
-            ->get()
-            ->map(function ($inventory) {
-                return [
-                    'blood_group' => $inventory->bloodGroup->name,
-                    'units_available' => $inventory->units_available,
-                    'units_requested' => $inventory->units_requested,
-                    'last_updated' => $inventory->updated_at->format('M d, Y')
-                ];
-            });
+        // Blood Inventory with Low Stock Alerts mapped across all BloodGroups
+        $bloodGroups = BloodGroup::all();
+        $bloodInventory = $bloodGroups->map(function ($group) {
+            $availableUnits = BloodInventory::where('blood_group_id', $group->id)
+                ->where('status', 'available')
+                ->where('expiry_date', '>', now())
+                ->sum('units_available');
+
+            $requestedUnits = BloodInventory::where('blood_group_id', $group->id)
+                ->where('status', 'reserved')
+                ->sum('units_requested');
+
+            return [
+                'blood_group' => $group->name,
+                'units_available' => (int) $availableUnits,
+                'units_requested' => (int) $requestedUnits,
+                'last_updated' => now()->format('M d, Y')
+            ];
+        });
 
         $lowStockThreshold = SystemSetting::get('low_stock_threshold', 10);
-        $lowStockAlerts = BloodInventory::with('bloodGroup')
-            ->where('units_available', '<', $lowStockThreshold)
-            ->get()
-            ->map(function ($inventory) use ($lowStockThreshold) {
-                return [
-                    'blood_group' => $inventory->bloodGroup->name,
-                    'units_available' => $inventory->units_available,
-                    'threshold' => $lowStockThreshold
-                ];
-            });
+        $lowStockAlerts = $bloodInventory->filter(function ($item) use ($lowStockThreshold) {
+            return $item['units_available'] < $lowStockThreshold;
+        })->values();
 
         // Monthly Donation Chart (Last 6 months)
+        $monthQuery = DB::getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', donation_date) as month"
+            : "DATE_FORMAT(donation_date, '%Y-%m') as month";
+
         $donationsChart = DB::table('donations')
             ->select(
-                DB::raw("DATE_FORMAT(donation_date, '%Y-%m') as month"),
+                DB::raw($monthQuery),
                 DB::raw('COUNT(*) as count')
             )
             ->where('donation_date', '>=', now()->subMonths(6))

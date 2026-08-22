@@ -26,7 +26,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request with role-based redirection.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->validate([
             'email' => 'required|email',
@@ -43,15 +43,15 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // 🔁 Role-based redirect
+        // 🔁 Role-based redirect (Inertia::location triggers full browser page load to Blade views)
         if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+            return Inertia::location(route('admin.dashboard'));
         } elseif ($user->role === 'donor') {
-            return redirect()->route('donor.dashboard');
+            return Inertia::location(route('donor.dashboard'));
         }
 
         // Default fallback
-        return redirect()->route('dashboard');
+        return Inertia::location(route('dashboard'));
     }
 
     /**

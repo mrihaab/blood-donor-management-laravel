@@ -1,13 +1,10 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
 
 // Public route
 Route::get('/', function () {
@@ -19,35 +16,17 @@ Route::get('/', function () {
     ]);
 });
 
-// Login As Interface
-Route::get('/login-as', function () {
-    return view('login-as');
-})->name('login.as');
-
-Route::post('/login-as', function (Request $request) {
-    $request->validate([
-        'role' => 'required|in:admin,donor',
-        'email' => 'required|email|exists:users,email',
-    ]);
-
-    $user = User::where('email', $request->email)->where('role', $request->role)->first();
-
-    if (!$user) {
-        return back()->withErrors(['email' => 'No user found with that role and email.']);
-    }
-
-    Auth::login($user);
-
-    return redirect()->route($user->role . '.dashboard');
-});
-
 // Breeze auth routes
 require __DIR__.'/auth.php';
 
-// Protected routes
+// Protected central routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
+        $user = Auth::user();
+        if ($user && $user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('donor.dashboard');
     })->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Donor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\BloodGroup;
 use App\Models\BloodRequest;
 use App\Models\Appointment;
 use App\Models\Donation;
@@ -15,21 +16,27 @@ class DashboardController extends Controller
         $user = Auth::user();
         $donor = $user->donor;
 
-        // If donor profile doesn't exist, create a basic one with required fields
+        // If donor profile doesn't exist unexpectedly, resolve blood group dynamically
         if (!$donor) {
+            $bloodGroup = BloodGroup::first() ?? BloodGroup::firstOrCreate(
+                ['name' => 'A+'],
+                ['description' => 'A positive']
+            );
+
             $donor = $user->donor()->create([
-                'blood_group_id' => 1, // Default to first blood group, user can update later
-                'gender' => 'male', // Default, user can update
-                'date_of_birth' => '1990-01-01', // Default, user can update
-                'contact_number' => $user->email, // Temporary, user can update
+                'blood_group_id' => $bloodGroup->id,
+                'gender' => 'other',
+                'date_of_birth' => '2000-01-01',
+                'contact_number' => $user->email,
                 'address' => 'Please update your address',
                 'city' => 'Unknown',
                 'state' => 'Unknown',
                 'zip_code' => '00000',
+                'is_available' => true,
             ]);
         }
 
-        // Get donor's stats
+        // Get donor's stats strictly from DB
         $totalDonations = Donation::where('donor_id', optional($donor)->id)->count();
         $latestDonation = Donation::where('donor_id', optional($donor)->id)->latest()->first();
         $upcomingAppointments = Appointment::where('donor_id', optional($donor)->id)
@@ -49,9 +56,9 @@ class DashboardController extends Controller
 
         // Calculate next eligible donation date (+56 days as per WHO guidelines)
         $nextEligibleDate = $latestDonation
-            ? $latestDonation->donation_date
+            ? ($latestDonation->donation_date
                 ? date('Y-m-d', strtotime($latestDonation->donation_date . ' + 56 days'))
-                : date('Y-m-d', strtotime($latestDonation->created_at . ' + 56 days'))
+                : date('Y-m-d', strtotime($latestDonation->created_at . ' + 56 days')))
             : now()->toDateString();
 
         return view('donor.dashboard', [
@@ -85,5 +92,4 @@ class DashboardController extends Controller
             'donor' => $donor
         ]);
     }
-
 }

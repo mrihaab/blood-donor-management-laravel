@@ -45,14 +45,15 @@ class UserController extends Controller
             'status' => 'required|in:active,inactive,blocked'
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
             'status' => $request->status,
-            'email_verified_at' => now() // Auto-verify admin created users
+            'email_verified_at' => now(),
         ]);
+        $user->role = $request->role;
+        $user->save();
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully!');
@@ -60,6 +61,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $masterAdminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
@@ -68,18 +71,20 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed'
         ]);
 
-        $updateData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-            'status' => $request->status
-        ];
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->status = $request->status;
 
-        if ($request->filled('password')) {
-            $updateData['password'] = Hash::make($request->password);
+        // Prevent changing master admin role
+        if ($user->email !== $masterAdminEmail) {
+            $user->role = $request->role;
         }
 
-        $user->update($updateData);
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully!');
@@ -87,10 +92,12 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        // Prevent deletion of current user
-        if ($user->id === auth()->id()) {
+        $masterAdminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+
+        // Prevent deletion of master admin account or self
+        if ($user->email === $masterAdminEmail || $user->id === auth()->id()) {
             return redirect()->route('admin.users.index')
-                ->with('error', 'You cannot delete your own account.');
+                ->with('error', 'The master admin account cannot be deleted.');
         }
 
         // Check if user has related data
@@ -111,8 +118,14 @@ class UserController extends Controller
 
     public function toggleStatus(User $user)
     {
+        $masterAdminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+
+        if ($user->email === $masterAdminEmail) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'The master admin account status cannot be modified.');
+        }
+
         $newStatus = $user->status === 'active' ? 'inactive' : 'active';
-        
         $user->update(['status' => $newStatus]);
 
         return redirect()->route('admin.users.index')

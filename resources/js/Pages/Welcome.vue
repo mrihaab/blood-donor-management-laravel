@@ -30,11 +30,6 @@ defineProps({
                     :href="route('register')"
                     class="ml-4 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500"
                 >Register</Link>
-
-                <Link
-                    :href="route('login.as')"
-                    class="ml-4 font-semibold text-red-600 hover:text-red-700 dark:text-red-400 focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500"
-                >Quick Portal Login</Link>
             </template>
         </div>
 
@@ -63,9 +58,9 @@ defineProps({
                         class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-150"
                     >Become a Donor</Link>
                     <Link
-                        :href="route('login.as')"
+                        :href="route('login')"
                         class="px-6 py-3 bg-white text-gray-800 font-medium rounded-lg shadow border border-gray-300 hover:bg-gray-50 transition duration-150"
-                    >Portal Access</Link>
+                    >Sign In</Link>
                 </div>
             </div>
 
@@ -78,7 +73,7 @@ defineProps({
                 <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center font-bold text-xl mb-4">📊</div>
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white">Real-Time Inventory</h3>
-                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Monitor blood group stock levels ($A+$, $O-$, etc.) with automated low-stock warnings.</p>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Monitor blood group stock levels with automated low-stock warnings.</p>
                 </div>
                 <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center font-bold text-xl mb-4">🚨</div>
