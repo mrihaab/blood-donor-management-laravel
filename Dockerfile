@@ -52,4 +52,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # Run entrypoint script
-CMD touch database/database.sqlite && php artisan migrate:force --seed && apache2-foreground
+CMD touch database/database.sqlite && php artisan migrate --force --seed && apache2-foreground
