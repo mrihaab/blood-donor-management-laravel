@@ -32,10 +32,11 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Configure Apache Document Root to /public
+# Configure Apache Document Root & AllowOverride All for Laravel public directory
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/conf-available/*.conf
+RUN printf "<Directory /var/www/html/public>\n    Options Indexes FollowSymLinks\n    AllowOverride All\n    Require all granted\n</Directory>\n" >> /etc/apache2/apache2.conf
 
 # Set environment variables for production build
 ENV PORT=80
@@ -55,4 +56,4 @@ RUN chmod -R 777 storage bootstrap/cache database
 EXPOSE 80
 
 # Run entrypoint script with proper ownership and permissions
-CMD touch database/database.sqlite && chmod 777 database/database.sqlite && php artisan migrate --force --seed && php artisan config:clear && apache2-foreground
+CMD touch database/database.sqlite && chmod 777 database/database.sqlite && php artisan migrate --force --seed && apache2-foreground
