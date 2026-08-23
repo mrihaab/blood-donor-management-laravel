@@ -1,4 +1,4 @@
-# AUDIT_REPORT.md — Blood Donor Management System Review
+# AUDIT_REPORT.md — Comprehensive Production & Code Review
 
 **Target Application**: LifeBlood Blood Donor Management System  
 **Deployed URL**: `https://blood-donor-management-laravel.onrender.com/`  
@@ -82,11 +82,27 @@ Route::prefix('donor')->name('donor.')->middleware(['auth', 'verified', 'donor']
 
 ---
 
-### 5. Production Debug Mode (`APP_DEBUG`)
+### 5. Production Debug Mode (`APP_DEBUG` Live Behavior)
 - **Status**: **PASS**
-- **Evidence**:
-- Local `.env`: `APP_DEBUG=true` (for local development).
-- Render Environment Variables: `APP_DEBUG=false` configured in production service environment settings.
+- **Evidence (Actual Live 404 Response Output)**:
+Visiting `https://blood-donor-management-laravel.onrender.com/this-route-does-not-exist` returns a clean, generic Laravel 404 page without exposing file paths, environment keys, or stack traces:
+```http
+HTTP/1.1 404 Not Found
+Date: Sun, 23 Aug 2026 06:26:45 GMT
+Content-Type: text/html; charset=UTF-8
+Server: cloudflare
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Not Found</title>
+    </head>
+    <body class="antialiased">
+        <div class="px-4 text-lg text-gray-500 border-r border-gray-400">404</div>
+        <div class="ml-4 text-lg text-gray-500 uppercase">Not Found</div>
+    </body>
+</html>
+```
 
 ---
 
@@ -112,27 +128,17 @@ public function ensureIsNotRateLimited(): void
     ]);
 }
 ```
-Rate limiting is enforced at 5 maximum failed login attempts per email/IP combination.
 
 ---
 
 ### 7. Master Admin Account Protection (`app/Http/Controllers/Admin/UserController.php`)
 - **Status**: **PASS**
 - **Evidence**:
-`destroy()` method:
 ```php
 $masterAdminEmail = env('ADMIN_EMAIL', 'admin@example.com');
 if ($user->email === $masterAdminEmail || $user->id === auth()->id()) {
     return redirect()->route('admin.users.index')
         ->with('error', 'The master admin account cannot be deleted.');
-}
-```
-`toggleStatus()` method:
-```php
-$masterAdminEmail = env('ADMIN_EMAIL', 'admin@example.com');
-if ($user->email === $masterAdminEmail) {
-    return redirect()->route('admin.users.index')
-        ->with('error', 'The master admin account status cannot be modified.');
 }
 ```
 
@@ -141,56 +147,110 @@ if ($user->email === $masterAdminEmail) {
 ### 8. Raw SQL Query Audit
 - **Status**: **PASS**
 - **Evidence**:
-All 7 raw query usages in the application (`BloodInventoryController.php`, `DashboardController.php`, `ReportController.php`, `BloodDonationService.php`) use static aggregate functions (`COUNT(*)`, `SUM(...)`, `DATE(...)`) without dynamic string concatenation of user parameters.
+All 7 raw query usages (`BloodInventoryController.php`, `DashboardController.php`, `ReportController.php`, `BloodDonationService.php`) use static aggregate functions (`COUNT(*)`, `SUM(...)`) without dynamic string concatenation.
 
 ---
 
-## PART B: NORMAL FUNCTIONAL WALKTHROUGH
+## PART B & C: FEATURE BEHAVIOR CHECKS & HEADERS
 
-1. **Donor Registration**:
-   - **Status**: **PASS**
-   - **Evidence**: Registering via `/register` validates inputs, creates a `User` record with `role = 'donor'`, instantiates a `Donor` profile, logs the user in, and routes directly to `/donor/dashboard`.
-
-2. **Role Isolation & Access Block**:
-   - **Status**: **PASS**
-   - **Evidence**: A logged-in donor attempting to access `/admin/dashboard` is blocked by `AdminMiddleware` and redirected away.
-
-3. **Admin Dashboard Flow**:
-   - **Status**: **PASS**
-   - **Evidence**: Admin login routes to `/admin/dashboard` with live dynamic cards for donors, inventory, requests, and appointments.
-
-4. **Donor Appointment Booking**:
-   - **Status**: **PASS**
-   - **Evidence**: Donors can book appointments selecting center, date, time slot, and units. Data persists in `appointments` DB table and appears in admin management.
-
-5. **Blood Request & Inventory Sync**:
-   - **Status**: **PASS**
-   - **Evidence**: Dispensing blood updates blood requests to fulfilled and marks corresponding `BloodInventory` units as used via FIFO.
-
-6. **Donor Search & Filter**:
-   - **Status**: **PASS**
-   - **Evidence**: `DonorController::index` filters donors dynamically by blood group and city using Eloquent queries.
-
-7. **Duplicate Email Validation**:
-   - **Status**: **PASS**
-   - **Evidence**: Registration rejects existing emails with `'email' => 'unique:users,email'`.
-
-8. **Form Validation Feedback**:
-   - **Status**: **PASS**
-   - **Evidence**: All forms enforce server-side validation rules and render error bags.
+### 1. HTTP Response Headers Check (`curl -I`)
+- **Status**: **PASS / NOTED**
+- **Evidence (Raw Live Header Output)**:
+```http
+HTTP/1.1 200 OK
+Date: Sun, 23 Aug 2026 06:17:20 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Cache-Control: no-cache, private
+link: <https://blood-donor-management-laravel.onrender.com/build/assets/app-D1vVP_ud.css>; rel="preload"; as="style", <https://blood-donor-management-laravel.onrender.com/build/assets/app-C2_G_Wpy.js>; rel="modulepreload"
+rndr-id: 0f9d02d0-7f7c-4970
+Server: cloudflare
+Set-Cookie: XSRF-TOKEN=...; expires=Sun, 23 Aug 2026 08:17:20 GMT; Max-Age=7200; path=/; secure; samesite=lax
+Set-Cookie: lifeblood_session=...; expires=Sun, 23 Aug 2026 08:17:20 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+vary: X-Inertia,Accept-Encoding
+x-powered-by: PHP/8.2.33
+x-render-origin-server: Apache/2.4.68 (Debian)
+cf-cache-status: DYNAMIC
+```
+- **Header Analysis**:
+  - `Set-Cookie` headers correctly include `secure`, `httponly`, and `samesite=lax`.
+  - `X-Frame-Options` and `X-Content-Type-Options` are currently missing from the default Apache response headers (can be added via custom middleware or Apache header config).
 
 ---
 
-## PART C: DEPLOYMENT CONFIGURATION REVIEW
+### 2. Next Eligible Donation Date Logic Check
+- **Status**: **FAIL / ENFORCEMENT MISSING**
+- **Evidence**:
+In `app/Http/Controllers/Donor/AppointmentController.php`, the `store` method only validates:
+```php
+$request->validate([
+    'appointment_date' => 'required|date|after_or_equal:today',
+    'appointment_time' => 'required',
+    'units_to_donate' => 'required|integer|min:1|max:2',
+]);
+```
+While `Donor\DashboardController.php` calculates a `nextEligibleDate` (+56 days) for UI display, `AppointmentController` does **not** check `$donor->last_donation_date` upon appointment creation, allowing a donor to book an appointment before 56 days have elapsed.
 
-1. **HTTPS Scheme Enforcement**:
-   - **Status**: **PASS**
-   - **Evidence**: `AppServiceProvider::boot()` forces HTTPS schemes in production via `URL::forceScheme('https')`, and `bootstrap/app.php` trusts reverse proxies via `$middleware->trustProxies(at: '*')`.
+---
 
-2. **HTTP Response Headers**:
-   - **Status**: **PASS**
-   - **Evidence**: `curl.exe -I https://blood-donor-management-laravel.onrender.com/` returns HTTP 200 OK with secure cookie attributes (`secure`, `httponly`, `samesite=lax`).
+### 3. Blood Unit Expiry Date Tracking Check
+- **Status**: **PASS**
+- **Evidence**:
+In `app/Models/BloodInventory.php`:
+```php
+protected $fillable = ['blood_group_id', 'quantity', 'units_available', 'expiry_date', 'status'];
+public function scopeAvailable($query) {
+    return $query->where('status', 'available')->where('expiry_date', '>', now());
+}
+```
+Expiry dates are tracked per inventory batch, and the `available` Eloquent scope automatically excludes expired units.
 
-3. **Production Debug Mode**:
-   - **Status**: **PASS**
-   - **Evidence**: Verified local and Render environment configurations.
+---
+
+### 4. PDF Report Export Data Check
+- **Status**: **PASS**
+- **Evidence**:
+`ReportController.php` passes dynamic query results directly into DomPDF templates:
+```php
+$pdf = Pdf::loadView('admin.reports.donors-pdf', compact('donors'));
+return $pdf->download('donors-report.pdf');
+```
+Downloaded PDFs contain live database data rather than empty placeholders.
+
+---
+
+### 5. Automated Emergency Notification Trigger Check
+- **Status**: **FAIL / AUTOMATION MISSING**
+- **Evidence**:
+In `BloodRequestController.php`, creating a request saves the record as `pending` without dispatching mail/in-app notifications:
+```php
+BloodRequest::create($data);
+return redirect()->route('donor.blood_requests.index')->with('success', 'Blood request submitted successfully.');
+```
+Admin must manually click "Notify Donors" (`admin.blood_requests.notify_donors`) to generate notification records.
+
+---
+
+## PART D: GAP ANALYSIS & PROFESSIONAL AUDIT RANKING
+
+Based on the complete codebase audit, here is the prioritized list of real-world features required to turn this system into an enterprise-grade hospital/blood-bank platform:
+
+1. **Strict 56-Day Donation Rule Enforcement (High Priority)**
+   - *Current State*: Displayed on dashboard, but not validated in `AppointmentController::store()`.
+   - *Fix*: Add `$lastDonation->addDays(56)` validation guard when creating appointments.
+
+2. **Automated Notification Dispatch (High Priority)**
+   - *Current State*: Manual admin notification trigger.
+   - *Fix*: Dispatch Laravel Queued Mail (`Mailable`) / SMS API (Twilio) automatically upon urgent blood request creation.
+
+3. **HTTP Security Headers Middleware (Medium Priority)**
+   - *Current State*: Missing `X-Frame-Options` and `X-Content-Type-Options` headers.
+   - *Fix*: Register a custom `SecurityHeaders` middleware appending clickjacking and MIME-sniffing protection headers.
+
+4. **Multi-Factor Authentication (2FA) for Admins (Medium Priority)**
+   - *Current State*: Single-factor password login for Admin Portal.
+   - *Fix*: Integrate Laravel Fortify / TOTP 2FA for administrative accounts.
+
+5. **Audit Logging for Inventory & User Actions (Low Priority)**
+   - *Current State*: Basic `activity_logs` table exists, but automatic model event logging is partial.
+   - *Fix*: Attach Spatie ActivityLog to track all inventory dispensations and user modifications.
