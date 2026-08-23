@@ -33,9 +33,11 @@ class BloodRequestAdminController extends Controller
     {
         $requests = BloodRequest::with(['user', 'approver'])
             ->latest()
-            ->get();
+            ->paginate(15);
+
+        $bloodRequests = $requests;
             
-        return view('admin.blood-requests.index', compact('requests'));
+        return view('admin.blood-requests.index', compact('requests', 'bloodRequests'));
     }
 
     public function approve(ApproveBloodRequest $request, $id)
@@ -48,7 +50,7 @@ class BloodRequestAdminController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $request->validate(['reason' => 'required|string|max:500']);
+        $request->validate(['reason' => 'nullable|string|max:500']);
         $bloodRequest = BloodRequest::findOrFail($id);
         $this->bloodRequestService->rejectRequest($bloodRequest, auth()->user(), $request->input('reason'));
 

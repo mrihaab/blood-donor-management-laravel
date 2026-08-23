@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="space-y-8">
+    <x-breadcrumbs :items="[['label' => 'Blood Requests']]" />
+
     <!-- Page Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -49,22 +51,23 @@
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
                             @if($req->status === 'pending')
-                                <form action="{{ route('admin.blood_requests.approve', $req->id) }}" method="POST" class="inline">
+                                <form id="form-approve-{{ $req->id }}" action="{{ route('admin.blood_requests.approve', $req->id) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">
                                         Approve & Allocate
                                     </button>
                                 </form>
-                                <form action="{{ route('admin.blood_requests.reject', $req->id) }}" method="POST" class="inline">
+
+                                <form id="form-reject-{{ $req->id }}" action="{{ route('admin.blood_requests.reject', $req->id) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition">
+                                    <button type="button" @click="$dispatch('open-confirm', { modalId: 'confirm-reject', formId: 'form-reject-{{ $req->id }}' })" class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition">
                                         Reject
                                     </button>
                                 </form>
                             @elseif($req->status === 'approved')
-                                <form action="{{ route('admin.blood_requests.dispense', $req->id) }}" method="POST" class="inline">
+                                <form id="form-dispense-{{ $req->id }}" action="{{ route('admin.blood_requests.dispense', $req->id) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition">
+                                    <button type="button" @click="$dispatch('open-confirm', { modalId: 'confirm-dispense', formId: 'form-dispense-{{ $req->id }}' })" class="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition">
                                         Dispense Units
                                     </button>
                                 </form>
@@ -89,5 +92,10 @@
             </div>
         @endif
     </div>
+
+    <!-- Modals for Rejection and Dispensing Confirmation -->
+    <x-confirm-dialog id="confirm-reject" title="Reject Blood Requisition" message="Are you sure you want to reject this blood requisition request? This action will be logged in audit trails." confirmText="Reject Requisition" variant="danger" />
+
+    <x-confirm-dialog id="confirm-dispense" title="Dispense Allocated Units" message="Are you sure you want to dispense physical blood units for this requisition? This will update unit statuses to dispensed." confirmText="Dispense Units" variant="primary" />
 </div>
 @endsection

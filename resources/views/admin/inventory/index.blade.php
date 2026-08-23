@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="space-y-8">
+    <x-breadcrumbs :items="[['label' => 'Blood Inventory']]" />
+
     <!-- Page Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

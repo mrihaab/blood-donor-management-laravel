@@ -33,24 +33,27 @@ class DashboardController extends Controller
             ->where('expiry_date', '>=', now()->format('Y-m-d'))
             ->count();
 
-        // Blood Inventory with Low Stock Alerts mapped across all BloodGroups
+        // Optimized GROUP BY queries to avoid N+1 queries per blood group
+        $availableGroupCounts = BloodUnit::select('blood_group_id', DB::raw('COUNT(*) as total'))
+            ->where('status', 'available')
+            ->where('expiry_date', '>=', now()->format('Y-m-d'))
+            ->groupBy('blood_group_id')
+            ->pluck('total', 'blood_group_id');
+
+        $reservedGroupCounts = BloodUnit::select('blood_group_id', DB::raw('COUNT(*) as total'))
+            ->whereIn('status', ['reserved', 'allocated'])
+            ->groupBy('blood_group_id')
+            ->pluck('total', 'blood_group_id');
+
+        // Map stock across all BloodGroups using grouped query results
         $bloodGroups = BloodGroup::all();
-        $bloodInventory = $bloodGroups->map(function ($group) {
-            $availableUnits = BloodUnit::where('blood_group_id', $group->id)
-                ->where('status', 'available')
-                ->where('expiry_date', '>=', now()->format('Y-m-d'))
-                ->count();
-
-            $requestedUnits = BloodUnit::where('blood_group_id', $group->id)
-                ->whereIn('status', ['reserved', 'allocated'])
-                ->count();
-
+        $bloodInventory = $bloodGroups->map(function ($group) use ($availableGroupCounts, $reservedGroupCounts) {
             return [
-                'blood_group_id' => $group->id,
-                'blood_group' => $group->name,
-                'units_available' => (int) $availableUnits,
-                'units_requested' => (int) $requestedUnits,
-                'last_updated' => now()->format('M d, Y')
+                'blood_group_id'  => $group->id,
+                'blood_group'     => $group->name,
+                'units_available' => (int) ($availableGroupCounts[$group->id] ?? 0),
+                'units_requested' => (int) ($reservedGroupCounts[$group->id] ?? 0),
+                'last_updated'    => now()->format('M d, Y')
             ];
         });
 
