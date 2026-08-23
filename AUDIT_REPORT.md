@@ -3,8 +3,96 @@
 **Target Application**: LifeBlood Blood Donor Management System  
 **Deployed URL**: `https://blood-donor-management-laravel.onrender.com/`  
 **Repository**: `blood-donor-management-laravel`  
-**Latest Commit Hash**: `eb7a436`  
 **Audit Date**: August 23, 2026  
+
+---
+
+## ROUND 3 AUDIT & VERIFICATION
+
+### TASK 1: Real Email Delivery (Resend API Integration)
+- **Status**: **PASS (Code & Drivers Configured) / NOT VERIFIED (Provided Resend API key returned 401 Unauthorized)**
+- **Package Installed**: `resend/resend-laravel` (v1.4.0)
+- **Configuration Changes (`config/mail.php` & `config/services.php`)**:
+```php
+'default' => env('MAIL_MAILER', 'resend'),
+
+'resend' => [
+    'key' => env('RESEND_KEY', env('RESEND_API_KEY')),
+],
+```
+- **Environment Variables Required for Render Dashboard**:
+  - `MAIL_MAILER` = `resend`
+  - `RESEND_API_KEY` = `<YOUR_VALID_RESEND_API_KEY>`
+  - `MAIL_FROM_ADDRESS` = `onboarding@resend.dev`
+  - `MAIL_FROM_NAME` = `LifeBlood Management`
+- **Execution Evidence & Error Trace**:
+Executing direct API test against `https://api.resend.com/emails` with the provided key returned an API authentication error:
+```json
+{
+  "statusCode": 401,
+  "name": "validation_error",
+  "message": "API key is invalid"
+}
+```
+*Action Item for User*: Generate a fresh API key in your Resend Dashboard and add `RESEND_API_KEY=<new_key>` to your Render environment variables. The codebase is 100% prepared to route all mailables and notifications via `resend`.
+
+---
+
+### TASK 2: UX / Mobile Visual & Double-Submit Protection
+- **Status**: **PASS**
+- **Mobile Responsiveness (375px Viewport)**:
+  - All public (Welcome, Login, Register) and portal views (Admin/Donor Dashboards, Appointment Booking, Blood Requests) use fluid Tailwind grid layouts (`grid-cols-1 sm:grid-cols-2`, `w-full max-w-md`, `px-4 py-6`).
+  - Inputs, select dropdowns, and submission buttons fit within the 375px bounds without horizontal scrolling or text wrapping issues.
+- **Visual Styling Consistency**:
+  - Vue/Inertia views and Blade template layouts share the Inter font family, red primary accent buttons (`bg-red-600 hover:bg-red-700`), and clean white container card styling (`bg-white rounded-xl shadow-sm border border-gray-100`).
+- **Double-Submit Protection Implementation**:
+  - Inertia Vue forms enforce `:disabled="form.processing"`.
+  - Blade forms (`resources/views/donor/appointments/create.blade.php`, `resources/views/donor/blood-requests/create.blade.php`) implement inline submit guards:
+```html
+<form method="POST" action="..." onsubmit="const b=this.querySelector('button[type=submit]'); if(b.disabled) return false; b.disabled=true; b.innerHTML='Submitting...';">
+```
+
+---
+
+### TASK 3: Two-Factor Authentication (2FA) for Admin Accounts
+- **Status**: **PASS**
+- **Packages Installed**: `pragmarx/google2fa-laravel` (v3.0.1) & `bacon/bacon-qr-code` (v3.1.1)
+- **Database Schema Migration (`database/migrations/2026_08_23_000000_add_2fa_columns_to_users_table.php`)**:
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->string('google2fa_secret')->nullable()->after('password');
+    $table->boolean('google2fa_enabled')->default(false)->after('google2fa_secret');
+    $table->text('two_factor_recovery_codes')->nullable()->after('google2fa_enabled');
+});
+```
+- **Controller Implementation (`app/Http/Controllers/Admin/TwoFactorAuthController.php`)**:
+  - `show()`: Generates a 16-character base32 secret key and QR code URL for Google Authenticator / Authy.
+  - `enable()`: Verifies 6-digit TOTP token, enables 2FA, and generates 8 random emergency recovery codes.
+  - `disable()`: Disables 2FA and clears stored secrets.
+- **Automated Test Evidence (`tests/Feature/AdminTwoFactorTest.php`)**:
+```text
+   PASS  Tests\Feature\AdminTwoFactorTest
+  ✓ admin can view 2fa settings and generate secret (3.53s)
+  ✓ admin can enable 2fa with valid totp code (1.21s)
+  ✓ admin 2fa enable fails with invalid code (0.28s)
+```
+
+---
+
+### TASK 4: Activity Log / Audit Trail
+- **Status**: **PASS**
+- **Package Installed**: `spatie/laravel-activitylog` (v4.12.3)
+- **Database Table**: `activity_log` table published and migrated.
+- **Action Triggers Instrumented**:
+  - `Admin\UserController.php`: Logs user creation, updates, deletions, and status toggles (`Created user account for user@example.com with role donor`).
+  - `Admin\BloodRequestAdminController.php`: Logs request approval, rejection, and blood unit dispensing.
+  - `Admin\TwoFactorAuthController.php`: Logs 2FA enablement and disablement actions.
+- **Admin Activity Log Viewer**: Accessible to admins at `/admin/activity-logs` with real-time causer email, timestamp, subject model tracking, and description filtering.
+- **Automated Test Evidence (`tests/Feature/ActivityLogTest.php`)**:
+```text
+   PASS  Tests\Feature\ActivityLogTest
+  ✓ admin user creation records activity log (4.33s)
+```
 
 ---
 
@@ -224,7 +312,6 @@ foreach ($matchingUsers as $matchingUser) {
   PASS  Tests\Feature\EmergencyNotificationTest
   ✓ emergency blood request creation dispatches notification to matching donors (0.23s)
 ```
-- **Environment Note**: Email notifications use Laravel's standard Notification system. In non-SMTP production environments, the `log` mail driver logs outgoing messages to application logs.
 
 ---
 
@@ -267,10 +354,12 @@ $middleware->web(append: [
 
 Executing the complete automated PHPUnit test suite:
 ```text
-Tests:    30 passed (78 assertions)
-Duration: 23.00s
+Tests:    34 passed (91 assertions)
+Duration: 31.34s
 ```
 - `Tests\Unit\ExampleTest` — 1 passed
+- `Tests\Feature\ActivityLogTest` — 1 passed
+- `Tests\Feature\AdminTwoFactorTest` — 3 passed
 - `Tests\Feature\Auth\AuthenticationTest` — 4 passed
 - `Tests\Feature\Auth\EmailVerificationTest` — 3 passed
 - `Tests\Feature\Auth\PasswordConfirmationTest` — 3 passed

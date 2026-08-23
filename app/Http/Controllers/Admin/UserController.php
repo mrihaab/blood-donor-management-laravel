@@ -55,6 +55,11 @@ class UserController extends Controller
         $user->role = $request->role;
         $user->save();
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->log("Created user account for {$user->email} with role {$user->role}");
+
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully!');
     }
@@ -86,6 +91,11 @@ class UserController extends Controller
 
         $user->save();
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->log("Updated user account for {$user->email}");
+
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully!');
     }
@@ -110,6 +120,11 @@ class UserController extends Controller
                 ->with('error', 'Cannot delete user with existing donations or requests.');
         }
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->log("Deleted user account for {$user->email}");
+
         $user->delete();
 
         return redirect()->route('admin.users.index')
@@ -127,6 +142,11 @@ class UserController extends Controller
 
         $newStatus = $user->status === 'active' ? 'inactive' : 'active';
         $user->update(['status' => $newStatus]);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->log("Toggled user status for {$user->email} to {$newStatus}");
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User status updated successfully!');

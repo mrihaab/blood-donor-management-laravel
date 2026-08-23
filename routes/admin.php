@@ -14,6 +14,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     // Admin Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
+    // Activity Audit Logs
+    Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+    // Two-Factor Authentication Management
+    Route::get('/two-factor', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'show'])->name('2fa.show');
+    Route::post('/two-factor/enable', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'enable'])->name('2fa.enable');
+    Route::post('/two-factor/disable', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'disable'])->name('2fa.disable');
+
     // Donor Management
     Route::resource('donors', DonorController::class);
     Route::post('/donors/{donor}/toggle-status', [DonorController::class, 'toggleStatus'])->name('donors.toggle_status');

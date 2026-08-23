@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <form method="POST" action="{{ route('donor.blood_requests.store') }}" class="space-y-6">
+    <form method="POST" action="{{ route('donor.blood_requests.store') }}" onsubmit="const b=this.querySelector('button[type=submit]'); if(b.disabled) return false; b.disabled=true; b.innerHTML='Submitting...';" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
