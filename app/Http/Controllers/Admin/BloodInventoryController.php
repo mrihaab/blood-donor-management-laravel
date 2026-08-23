@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BloodGroup;
-use App\Models\BloodInventory;
+use App\Models\BloodUnit;
+use App\Models\BloodComponent;
 use App\Services\BloodInventoryService;
 use Illuminate\Http\Request;
 
@@ -17,47 +18,41 @@ class BloodInventoryController extends Controller
         $this->inventoryService = $inventoryService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $this->authorize('viewAny', BloodUnit::class);
+
         $inventoryOverview = $this->inventoryService->getInventoryOverview();
-        $inventoryItems = BloodInventory::with(['bloodGroup', 'donor.user'])
-            ->latest()
-            ->get();
+        
+        $query = BloodUnit::with(['bloodGroup', 'component', 'donor.user']);
 
-        return view('admin.inventory.index', compact('inventoryOverview', 'inventoryItems'));
-    }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('unit_number', 'like', "%{$search}%");
+        }
 
-    public function create()
-    {
+        if ($request->filled('blood_group_id')) {
+            $query->where('blood_group_id', $request->input('blood_group_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $bloodUnits = $query->latest()->paginate(15)->withQueryString();
         $bloodGroups = BloodGroup::all();
-        return view('admin.inventory.create', compact('bloodGroups'));
+        $components = BloodComponent::all();
+
+        return view('admin.inventory.index', compact('inventoryOverview', 'bloodUnits', 'bloodGroups', 'components'));
     }
 
-    public function store(Request $request)
+    public function show(BloodUnit $inventory)
     {
-        $request->validate([
-            'blood_group_id' => 'required|exists:blood_groups,id',
-            'units_available' => 'required|integer|min:1',
-            'collection_date' => 'required|date|before_or_equal:today',
-            'expiry_date' => 'required|date|after:collection_date',
-        ]);
+        $this->authorize('view', $inventory);
 
-        BloodInventory::create([
-            'blood_group_id' => $request->blood_group_id,
-            'quantity' => $request->units_available * 450,
-            'units_available' => $request->units_available,
-            'units_requested' => 0,
-            'collection_date' => $request->collection_date,
-            'expiry_date' => $request->expiry_date,
-            'status' => 'available',
-        ]);
+        $inventory->load(['bloodGroup', 'component', 'donor.user', 'inventoryTransactions.user']);
 
-        activity()
-            ->causedBy(auth()->user())
-            ->log("Added {$request->units_available} units to blood inventory");
-
-        return redirect()->route('admin.inventory.index')
-            ->with('success', 'Stock added successfully.');
+        return view('admin.inventory.show', ['unit' => $inventory]);
     }
 
     public function lowStockAlerts()

@@ -1,151 +1,122 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-50">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Admin Portal') - LifeBlood Management</title>
+    <title>{{ config('app.name', 'LifeBlood Platform') }} — Operations Portal</title>
 
+    <!-- Fonts & Tailwind -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="font-sans antialiased bg-gray-100 text-gray-900 min-h-screen flex flex-col">
-    <!-- Top Navigation Bar (Single Clean Navbar without Slider matching Donor Portal style) -->
-    <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Brand & Logo -->
-                <div class="flex items-center space-x-3 flex-shrink-0">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-2.5">
-                        <div class="p-1.5 bg-red-600 rounded-lg text-white">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                            </svg>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold text-base tracking-tight leading-none">LifeBlood</span>
-                            <span class="text-[10px] text-red-400 font-bold uppercase tracking-wider bg-red-950/60 px-1.5 py-0.5 rounded border border-red-800/40">Admin</span>
-                        </div>
-                    </a>
-                </div>
+<body class="h-full text-slate-900 antialiased" x-data="{ sidebarOpen: false }">
+    <div class="min-h-full">
+        <!-- Mobile Sidebar Drawer Overlay -->
+        <div x-show="sidebarOpen" class="fixed inset-0 z-40 flex lg:hidden" role="dialog" aria-modal="true">
+            <div x-show="sidebarOpen" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-900/80" @click="sidebarOpen = false"></div>
 
-                <!-- Desktop Nav Links (Clean, No Slider) -->
-                <div class="hidden lg:flex items-center space-x-1">
-                    <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.dashboard') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Dashboard</a>
-                    <a href="{{ route('admin.donors.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.donors.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Donors</a>
-                    <a href="{{ route('admin.inventory.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.inventory.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Inventory</a>
-                    <a href="{{ route('admin.donations.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.donations.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Donations</a>
-                    <a href="{{ route('admin.blood_requests.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.blood_requests.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Requests</a>
-                    <a href="{{ route('admin.appointments.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.appointments.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Appointments</a>
-                    <a href="{{ route('admin.reports.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.reports.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Reports</a>
-                    <a href="{{ route('admin.notifications.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.notifications.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Notifications</a>
-                    <a href="{{ route('admin.settings.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.settings.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Settings</a>
-                    <a href="{{ route('admin.users.index') }}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('admin.users.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Users</a>
-                </div>
-
-                <!-- Right Side User Menu -->
-                <div class="hidden lg:flex items-center space-x-3 flex-shrink-0">
-                    <span class="text-xs font-medium text-slate-300">
-                        {{ Auth::user()->name }}
-                    </span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="text-xs font-semibold px-2.5 py-1 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white rounded-lg transition border border-slate-700">
-                            Log Out
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Mobile Hamburger Toggle -->
-                <div class="lg:hidden flex items-center">
-                    <button id="admin-mobile-menu-btn" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
+            <div x-show="sidebarOpen" x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="relative flex w-full max-w-xs flex-1 flex-col bg-slate-900 pt-5 pb-4">
+                <div class="flex items-center justify-between px-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white font-bold">LB</div>
+                        <span class="text-lg font-bold text-white tracking-tight">LifeBlood Operations</span>
+                    </div>
+                    <button @click="sidebarOpen = false" class="text-slate-400 hover:text-white">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
+                <div class="mt-5 h-0 flex-1 overflow-y-auto px-2 space-y-1">
+                    @include('layouts.partials.admin-sidebar-links')
+                </div>
             </div>
         </div>
 
-        <!-- Mobile Menu Dropdown -->
-        <div id="admin-mobile-menu" class="hidden lg:hidden border-t border-slate-800 bg-slate-900 px-4 pt-2 pb-4 space-y-1">
-            <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.dashboard') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Dashboard
-            </a>
-            <a href="{{ route('admin.donors.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.donors.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Donors
-            </a>
-            <a href="{{ route('admin.inventory.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.inventory.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Blood Inventory
-            </a>
-            <a href="{{ route('admin.donations.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.donations.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Donations
-            </a>
-            <a href="{{ route('admin.blood_requests.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.blood_requests.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Blood Requests
-            </a>
-            <a href="{{ route('admin.appointments.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.appointments.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Appointments
-            </a>
-            <a href="{{ route('admin.reports.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.reports.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Reports
-            </a>
-            <a href="{{ route('admin.notifications.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.notifications.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Notifications
-            </a>
-            <a href="{{ route('admin.settings.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.settings.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                Settings
-            </a>
-            <a href="{{ route('admin.users.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('admin.users.*') ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                User Management
-            </a>
-
-            <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-300">{{ Auth::user()->name }} (Admin)</span>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="text-xs font-semibold px-3 py-1.5 bg-red-600 text-white rounded-lg">
-                        Log Out
-                    </button>
-                </form>
+        <!-- Static Desktop Sidebar -->
+        <div class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:bg-slate-900 lg:pt-5 lg:pb-4">
+            <div class="flex items-center space-x-3 px-6 pb-4 border-b border-slate-800">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-red-700 to-red-500 text-white font-black shadow-md">LB</div>
+                <div>
+                    <span class="text-base font-bold text-white tracking-tight block">LifeBlood</span>
+                    <span class="text-xs font-medium text-slate-400 block">Operations Platform</span>
+                </div>
+            </div>
+            <div class="mt-4 flex flex-1 flex-col overflow-y-auto px-3">
+                @include('layouts.partials.admin-sidebar-links')
             </div>
         </div>
-    </nav>
 
-    <!-- Page Title Header -->
-    <header class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-gray-800">@yield('page_title', 'Admin Dashboard')</h1>
+        <!-- Main Content Shell -->
+        <div class="flex flex-1 flex-col lg:pl-64">
+            <!-- Top Navbar -->
+            <div class="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white border-b border-slate-200 shadow-sm">
+                <button @click="sidebarOpen = true" class="border-r border-slate-200 px-4 text-slate-500 lg:hidden">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div class="flex flex-1 justify-between px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-1 items-center">
+                        <div class="w-full max-w-lg lg:max-w-xs">
+                            <label for="search" class="sr-only">Search platform</label>
+                            <div class="relative text-slate-400 focus-within:text-slate-600">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                                </div>
+                                <input id="search" class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Global Search (Ctrl + K)" type="search">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex items-center md:ml-6 space-x-4">
+                        <a href="{{ route('admin.notifications.index') }}" class="relative rounded-full bg-white p-1 text-slate-400 hover:text-slate-500">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        </a>
+
+                        <!-- User Profile Dropdown -->
+                        <div class="relative" x-data="{ userMenuOpen: false }">
+                            <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-3 focus:outline-none">
+                                <div class="h-8 w-8 rounded-full bg-red-700 text-white flex items-center justify-center font-bold text-xs">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 2)) }}
+                                </div>
+                                <span class="hidden md:inline-block text-sm font-semibold text-slate-700">{{ auth()->user()->name ?? 'Admin User' }}</span>
+                            </button>
+
+                            <div x-show="userMenuOpen" @click.away="userMenuOpen = false" class="absolute right-0 mt-2 w-48 rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5 z-50">
+                                <a href="{{ route('admin.2fa.show') }}" class="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Two-Factor Security</a>
+                                <a href="{{ route('admin.settings.index') }}" class="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">System Settings</a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">Log Out</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8">
+                @if (session('success'))
+                    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 text-sm font-semibold flex items-center justify-between">
+                        <span>{{ session('success') }}</span>
+                    </div>
+                @endif
+
+                @if (session('error'))
+                    <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 text-sm font-semibold flex items-center justify-between">
+                        <span>{{ session('error') }}</span>
+                    </div>
+                @endif
+
+                {{ $slot ?? '' }}
+                @yield('content')
+            </main>
         </div>
-    </header>
-
-    <!-- Flash Notifications -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
-        @if (session('success'))
-            <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200" role="alert">
-                <span class="font-bold">Success!</span> {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert">
-                <span class="font-bold">Error!</span> {{ session('error') }}
-            </div>
-        @endif
     </div>
-
-    <!-- Main Content Body -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        @yield('content')
-    </main>
-
-    <script>
-        document.getElementById('admin-mobile-menu-btn')?.addEventListener('click', function() {
-            document.getElementById('admin-mobile-menu')?.classList.toggle('hidden');
-        });
-    </script>
 </body>
 </html>

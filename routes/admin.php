@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\BloodRequestAdminController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\HospitalAdminController;
+use App\Http\Controllers\Admin\PatientAdminController;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
     // Admin Dashboard
@@ -25,6 +27,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     // Donor Management
     Route::resource('donors', DonorController::class);
     Route::post('/donors/{donor}/toggle-status', [DonorController::class, 'toggleStatus'])->name('donors.toggle_status');
+
+    // Hospital & Patient Entities
+    Route::get('/hospitals', [HospitalAdminController::class, 'index'])->name('hospitals.index');
+    Route::get('/hospitals/{hospital}', [HospitalAdminController::class, 'show'])->name('hospitals.show');
+    Route::get('/patients', [PatientAdminController::class, 'index'])->name('patients.index');
+    Route::get('/patients/{patient}', [PatientAdminController::class, 'show'])->name('patients.show');
     
     // Appointments Management
     Route::resource('appointments', AppointmentController::class);

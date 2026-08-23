@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Donor;
 use App\Models\BloodGroup;
 use App\Models\BloodRequest;
-use App\Models\BloodInventory;
+use App\Models\BloodUnit;
 use App\Models\Donation;
 use App\Models\User;
 use App\Models\SystemSetting;
@@ -28,19 +28,25 @@ class DashboardController extends Controller
         $totalDonations = Donation::count();
         $totalAdmins = User::where('role', 'admin')->count();
 
+        // Single Source of Truth: Physical BloodUnit bags count
+        $totalAvailableUnits = BloodUnit::where('status', 'available')
+            ->where('expiry_date', '>=', now()->format('Y-m-d'))
+            ->count();
+
         // Blood Inventory with Low Stock Alerts mapped across all BloodGroups
         $bloodGroups = BloodGroup::all();
         $bloodInventory = $bloodGroups->map(function ($group) {
-            $availableUnits = BloodInventory::where('blood_group_id', $group->id)
+            $availableUnits = BloodUnit::where('blood_group_id', $group->id)
                 ->where('status', 'available')
-                ->where('expiry_date', '>', now())
-                ->sum('units_available');
+                ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                ->count();
 
-            $requestedUnits = BloodInventory::where('blood_group_id', $group->id)
-                ->where('status', 'reserved')
-                ->sum('units_requested');
+            $requestedUnits = BloodUnit::where('blood_group_id', $group->id)
+                ->whereIn('status', ['reserved', 'allocated'])
+                ->count();
 
             return [
+                'blood_group_id' => $group->id,
                 'blood_group' => $group->name,
                 'units_available' => (int) $availableUnits,
                 'units_requested' => (int) $requestedUnits,
@@ -52,6 +58,11 @@ class DashboardController extends Controller
         $lowStockAlerts = $bloodInventory->filter(function ($item) use ($lowStockThreshold) {
             return $item['units_available'] < $lowStockThreshold;
         })->values();
+
+        // Expiring soon (within 7 days)
+        $expiringSoonCount = BloodUnit::where('status', 'available')
+            ->whereBetween('expiry_date', [now()->format('Y-m-d'), now()->addDays(7)->format('Y-m-d')])
+            ->count();
 
         // Monthly Donation Chart (Last 6 months)
         $monthQuery = DB::getDriverName() === 'sqlite'
@@ -82,7 +93,7 @@ class DashboardController extends Controller
             ->orderBy('total', 'desc')
             ->get();
 
-        // Recent Activities from single source of truth (activity_log)
+        // Recent Activities from activity_log
         $recentActivities = Activity::with('causer')
             ->latest()
             ->limit(10)
@@ -109,16 +120,6 @@ class DashboardController extends Controller
                 ->count()
         ];
 
-        // Top Donors (by donation count)
-        $topDonors = DB::table('donations')
-            ->join('donors', 'donations.donor_id', '=', 'donors.id')
-            ->join('users', 'donors.user_id', '=', 'users.id')
-            ->select('users.name', DB::raw('COUNT(*) as donation_count'))
-            ->groupBy('users.id', 'users.name')
-            ->orderBy('donation_count', 'desc')
-            ->limit(5)
-            ->get();
-
         // Quick Actions Data
         $quickActions = [
             'pending_requests' => $pendingRequests,
@@ -127,9 +128,6 @@ class DashboardController extends Controller
                 ->where('status', 'scheduled')
                 ->whereDate('appointment_date', '>=', now())
                 ->count(),
-            'notifications_pending' => DB::table('notifications')
-                ->where('status', 'pending')
-                ->count()
         ];
 
         return view('admin.dashboard', compact(
@@ -140,6 +138,8 @@ class DashboardController extends Controller
             'approvedRequests',
             'totalDonations',
             'totalAdmins',
+            'totalAvailableUnits',
+            'expiringSoonCount',
             'bloodInventory',
             'lowStockAlerts',
             'lowStockThreshold',
@@ -147,7 +147,6 @@ class DashboardController extends Controller
             'bloodGroupStats',
             'recentActivities',
             'thisMonthStats',
-            'topDonors',
             'quickActions'
         ));
     }

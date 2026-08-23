@@ -1,106 +1,121 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Dashboard')
-@section('page_title', 'Dashboard Overview')
-
 @section('content')
-<div class="space-y-6">
-    <!-- Stat Cards Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Total Donors</p>
-                <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalDonors }}</p>
-                <p class="text-xs text-green-600 font-medium mt-1">{{ $activeDonors }} Active Donors</p>
-            </div>
-            <div class="p-3 bg-red-50 text-red-600 rounded-lg text-2xl">🧍</div>
+<div class="space-y-8">
+    <!-- Page Header -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Blood Bank Operations Center</h1>
+            <p class="text-sm text-slate-500">Real-time inventory overview, critical requisition requests, and active donor statistics.</p>
         </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Blood Requests</p>
-                <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalRequests }}</p>
-                <p class="text-xs text-amber-600 font-medium mt-1">{{ $pendingRequests }} Pending Approval</p>
-            </div>
-            <div class="p-3 bg-amber-50 text-amber-600 rounded-lg text-2xl">📥</div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Total Donations</p>
-                <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalDonations }}</p>
-                <p class="text-xs text-blue-600 font-medium mt-1">{{ $thisMonthStats['donations'] ?? 0 }} This Month</p>
-            </div>
-            <div class="p-3 bg-blue-50 text-blue-600 rounded-lg text-2xl">💉</div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Low Stock Warnings</p>
-                <p class="text-3xl font-bold text-red-600 mt-1">{{ count($lowStockAlerts) }}</p>
-                <p class="text-xs text-gray-500 mt-1">Threshold: &lt; {{ $lowStockThreshold }} units</p>
-            </div>
-            <div class="p-3 bg-red-100 text-red-700 rounded-lg text-2xl">⚠️</div>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.donations.create') }}" class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">
+                + New Intake Donation
+            </a>
+            <a href="{{ route('admin.inventory.index') }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition">
+                View Barcode Bags
+            </a>
         </div>
     </div>
 
-    <!-- Inventory Overview & Stock Warning Alert -->
-    @if(count($lowStockAlerts) > 0)
-    <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl">
-        <div class="flex items-center">
-            <span class="text-xl mr-3">🚨</span>
-            <div>
-                <h4 class="font-bold text-red-800">Critical Low Stock Alert</h4>
-                <p class="text-sm text-red-700">The following blood groups have dipped below the minimum threshold ({{ $lowStockThreshold }} units):</p>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    @foreach($lowStockAlerts as $alert)
-                        <span class="px-2.5 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-md">
-                            {{ $alert['blood_group'] }}: {{ $alert['units_available'] }} units available
-                        </span>
-                    @endforeach
-                </div>
-            </div>
-        </div>
+    <!-- Top Operational KPI Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <x-stat-card title="Available Blood Units" value="{{ $totalAvailableUnits }}" icon="droplet" color="red" subtext="Derived from active BloodUnit bags" />
+        <x-stat-card title="Pending Requisitions" value="{{ $pendingRequests }}" icon="alert-triangle" color="amber" subtext="Requires administrative review" />
+        <x-stat-card title="Total Active Donors" value="{{ $activeDonors }}" icon="users" color="blue" subtext="Registered eligible donors" />
+        <x-stat-card title="Expiring (Next 7 Days)" value="{{ $expiringSoonCount }}" icon="clock" color="slate" subtext="Requires inventory priority" />
     </div>
-    @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Blood Stock Levels -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-900 text-lg">Blood Inventory Summary</h3>
-                <a href="{{ route('admin.inventory.index') }}" class="text-sm text-red-600 hover:underline font-semibold">Manage Inventory &rarr;</a>
+    <!-- Blood Group Stock Matrix -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Blood Stock Availability Grid</h2>
+                <p class="text-xs text-slate-500">Live inventory bag counts calculated directly from barcode unit records.</p>
             </div>
+            <a href="{{ route('admin.inventory.index') }}" class="text-xs font-semibold text-red-600 hover:text-red-700">Manage Units &rarr;</a>
+        </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                @foreach($bloodInventory as $item)
-                    <div class="p-4 rounded-lg border {{ $item['units_available'] < $lowStockThreshold ? 'border-red-200 bg-red-50/50' : 'border-gray-100 bg-gray-50' }}">
-                        <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-1 bg-red-600 text-white font-extrabold text-xs rounded-md">{{ $item['blood_group'] }}</span>
-                            <span class="text-xs text-gray-500">{{ $item['last_updated'] }}</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-900 mt-3">{{ $item['units_available'] }} <span class="text-xs font-normal text-gray-500">units</span></p>
-                        <p class="text-xs text-gray-500 mt-1">{{ $item['units_requested'] }} requested</p>
+        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
+            @foreach(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $groupName)
+                @php
+                    $groupStock = $bloodInventory->firstWhere('blood_group', $groupName);
+                    $count = $groupStock['units_available'] ?? 0;
+                    $status = $count < 5 ? 'critical' : ($count < 10 ? 'low' : 'healthy');
+                    $badgeColor = match($status) {
+                        'critical' => 'bg-rose-50 text-rose-700 border-rose-200',
+                        'low' => 'bg-amber-50 text-amber-700 border-amber-200',
+                        'healthy' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    };
+                @endphp
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                    <span class="inline-block rounded-lg bg-red-700 px-3 py-1 text-sm font-black text-white shadow-sm">{{ $groupName }}</span>
+                    <div class="mt-3">
+                        <span class="text-2xl font-black text-slate-900 block">{{ $count }}</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block mt-0.5">Bags Available</span>
                     </div>
-                @endforeach
-            </div>
+                    <div class="mt-3">
+                        <span class="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $badgeColor }}">
+                            {{ $status }}
+                        </span>
+                    </div>
+                </div>
+            @endforeach
         </div>
+    </div>
 
-        <!-- Recent Activity Log -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 class="font-bold text-gray-900 text-lg mb-4">Recent Activity</h3>
-            <div class="space-y-4 max-h-96 overflow-y-auto">
+    <!-- Activity Stream & Operational Quick Actions -->
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <!-- Audit Activity Log Feed -->
+        <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <h3 class="text-base font-bold text-slate-900">Audit Trail & Operations Stream</h3>
+                <a href="{{ route('admin.activity-logs.index') }}" class="text-xs font-semibold text-red-600 hover:text-red-700">View Full Logs &rarr;</a>
+            </div>
+            <div class="mt-4 divide-y divide-slate-100">
                 @forelse($recentActivities as $activity)
-                    <div class="flex items-start space-x-3 text-sm pb-3 border-b border-gray-50">
-                        <span class="p-1.5 bg-gray-100 rounded text-gray-600 mt-0.5">📌</span>
+                    <div class="py-3 flex items-center justify-between">
                         <div>
-                            <p class="text-gray-800">{{ $activity['message'] }}</p>
-                            <p class="text-xs text-gray-400 mt-0.5">By {{ $activity['user_name'] }} • {{ $activity['created_at'] }}</p>
+                            <p class="text-sm font-medium text-slate-900">{{ $activity['message'] }}</p>
+                            <p class="text-xs text-slate-500">By <span class="font-semibold">{{ $activity['user_name'] }}</span></p>
                         </div>
+                        <span class="text-xs text-slate-400 font-mono">{{ $activity['created_at'] }}</span>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-500 italic">No recent system activity recorded.</p>
+                    <p class="py-4 text-sm text-slate-500 text-center">No recent activity logs recorded.</p>
                 @endforelse
+            </div>
+        </div>
+
+        <!-- System Quick Actions & Summary -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+            <h3 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-4">Operational Summary</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-600 font-medium">Pending Requisitions</span>
+                    <span class="font-bold text-slate-900 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">{{ $pendingRequests }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-600 font-medium">This Month Donations</span>
+                    <span class="font-bold text-slate-900">{{ $thisMonthStats['donations'] }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-600 font-medium">New Donors (This Month)</span>
+                    <span class="font-bold text-slate-900">{{ $thisMonthStats['new_donors'] }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-600 font-medium">Fulfilled Requests</span>
+                    <span class="font-bold text-slate-900">{{ $thisMonthStats['approved_requests'] }}</span>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-200 space-y-2">
+                <a href="{{ route('admin.blood_requests.index') }}" class="block w-full text-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition">
+                    Review Blood Requests
+                </a>
+                <a href="{{ route('admin.reports.index') }}" class="block w-full text-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition">
+                    Export Compliance Reports
+                </a>
             </div>
         </div>
     </div>

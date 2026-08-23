@@ -1,94 +1,87 @@
 @extends('layouts.donor')
 
-@section('title', 'Donor Dashboard')
-@section('page_title', 'Donor Dashboard')
-
 @section('content')
-<div class="space-y-6">
-    <!-- Eligibility Status Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center space-x-4">
-            <div class="p-3 bg-red-100 text-red-600 rounded-full text-3xl">🩸</div>
+<div class="space-y-8">
+    <!-- Donor Hero Header -->
+    <div class="rounded-2xl bg-gradient-to-r from-red-800 to-red-600 p-8 text-white shadow-lg">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h3 class="font-bold text-gray-900 text-lg">Welcome back, {{ Auth::user()->name }}!</h3>
-                <p class="text-sm text-gray-600">Blood Group: <span class="font-bold text-red-600">{{ $bloodGroup ?? 'Not Set' }}</span></p>
-                <div class="mt-1">
-                    @if(!isset($nextEligibleDate) || $nextEligibleDate <= date('Y-m-d'))
-                        <span class="px-2.5 py-0.5 bg-green-100 text-green-800 text-xs font-bold rounded-full">Eligible to Donate</span>
-                    @else
-                        <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">Next Eligible Date: {{ $nextEligibleDate }}</span>
-                    @endif
+                <span class="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-sm">Donor Portal</span>
+                <h1 class="mt-2 text-3xl font-extrabold tracking-tight">Welcome back, {{ auth()->user()->name }}!</h1>
+                <p class="mt-1 text-sm text-red-100">Thank you for being a lifesaving hero. Your blood donations save lives across hospitals.</p>
+            </div>
+            <div class="rounded-xl bg-white/10 p-4 backdrop-blur-sm text-center border border-white/20">
+                <span class="text-xs uppercase font-bold text-red-200 block">Your Blood Group</span>
+                <span class="text-3xl font-black text-white block mt-0.5">{{ auth()->user()->donor->bloodGroup->name ?? 'O+' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eligibility & Quick Metrics Grid -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <!-- Medical Eligibility Status -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">56-Day Donation Guard</span>
+            @if($eligibility['eligible'])
+                <div class="flex items-center space-x-2">
+                    <span class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-lg font-bold text-emerald-700">Eligible to Donate Today!</span>
                 </div>
-            </div>
+                <p class="text-xs text-slate-500">You have met the mandatory 56-day recovery interval.</p>
+            @else
+                <div class="flex items-center space-x-2">
+                    <span class="h-3 w-3 rounded-full bg-amber-500"></span>
+                    <span class="text-lg font-bold text-amber-700">Deferred Until {{ $eligibility['next_eligible_date']->format('M d, Y') }}</span>
+                </div>
+                <p class="text-xs text-slate-500">Please wait {{ $eligibility['days_remaining'] }} more days before your next donation.</p>
+            @endif
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('donor.appointments.create') }}" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm transition">+ Schedule Donation</a>
-            <a href="{{ route('donor.blood_requests.create') }}" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg text-sm transition">Request Blood</a>
+
+        <!-- Last Donation -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Last Donation Date</span>
+            <h3 class="text-2xl font-bold text-slate-900">{{ auth()->user()->donor->last_donation_date ?? 'No prior record' }}</h3>
+            <p class="text-xs text-slate-500">Recorded in LifeBlood platform</p>
+        </div>
+
+        <!-- Upcoming Appointment -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Next Scheduled Visit</span>
+            @if($upcomingAppointment)
+                <h3 class="text-lg font-bold text-slate-900">{{ $upcomingAppointment->appointment_date }}</h3>
+                <p class="text-xs text-slate-500">Location: {{ $upcomingAppointment->location ?? 'Main Donation Center' }}</p>
+            @else
+                <h3 class="text-base font-bold text-slate-500">No upcoming appointment</h3>
+                <a href="{{ route('donor.appointments.create') }}" class="inline-block text-xs font-semibold text-red-600 hover:underline">+ Book Appointment</a>
+            @endif
         </div>
     </div>
 
-    <!-- Quick Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <p class="text-sm font-medium text-gray-500">Total Donations</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalDonations ?? 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">Lifesaving contributions</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <p class="text-sm font-medium text-gray-500">Upcoming Appointments</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $upcomingAppointments ?? 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">Scheduled sessions</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <p class="text-sm font-medium text-gray-500">Matching Blood Requests</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $bloodRequests ?? 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">Active requests for {{ $bloodGroup }}</p>
-        </div>
-    </div>
-
-    <!-- Recent History & Upcoming Appointments -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Appointments -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-900 text-lg">My Appointments</h3>
-                <a href="{{ route('donor.appointments.index') }}" class="text-sm text-red-600 hover:underline">View All</a>
+    <!-- Quick Action Cards -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <a href="{{ route('donor.appointments.create') }}" class="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm hover:border-red-500 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 group-hover:text-red-600 transition">Book Donation Appointment</h3>
+                <span class="text-slate-400 group-hover:text-red-600 font-bold">&rarr;</span>
             </div>
-            <div class="space-y-3">
-                @forelse($recentAppointments ?? [] as $app)
-                    <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-                        <div>
-                            <p class="font-semibold text-gray-900 text-sm">{{ $app->appointment_date }} at {{ $app->appointment_time ?? '09:00 AM' }}</p>
-                            <p class="text-xs text-gray-500">{{ $app->location ?? 'Main Blood Bank Center' }}</p>
-                        </div>
-                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">{{ ucfirst($app->status) }}</span>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-500 italic">No appointments scheduled.</p>
-                @endforelse
-            </div>
-        </div>
+            <p class="mt-2 text-xs text-slate-500">Schedule a visit at a convenient blood collection center.</p>
+        </a>
 
-        <!-- Latest Donation -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-900 text-lg">Latest Donation</h3>
-                <a href="{{ route('donor.history') }}" class="text-sm text-red-600 hover:underline">View Full History</a>
+        <a href="{{ route('donor.blood-requests.create') }}" class="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm hover:border-red-500 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 group-hover:text-red-600 transition">Request Emergency Blood</h3>
+                <span class="text-slate-400 group-hover:text-red-600 font-bold">&rarr;</span>
             </div>
-            <div>
-                @if($latestDonation)
-                    <div class="p-4 bg-gray-50 rounded-lg space-y-2">
-                        <p class="text-sm text-gray-600">Donated Quantity: <span class="font-bold text-gray-900">{{ $latestDonation->quantity }} Unit(s)</span></p>
-                        <p class="text-sm text-gray-600">Date: <span class="font-medium text-gray-900">{{ $latestDonation->donation_date ?? $latestDonation->created_at->format('Y-m-d') }}</span></p>
-                        <p class="text-sm text-gray-600">Collection Center: <span class="font-medium text-gray-900">{{ $latestDonation->collection_center ?? 'Main Center' }}</span></p>
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500 italic">No previous donation records found.</p>
-                @endif
+            <p class="mt-2 text-xs text-slate-500">Submit a requisition request for a family member or hospital patient.</p>
+        </a>
+
+        <a href="{{ route('donor.history') }}" class="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm hover:border-red-500 hover:shadow-md transition">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900 group-hover:text-red-600 transition">Donation Impact History</h3>
+                <span class="text-slate-400 group-hover:text-red-600 font-bold">&rarr;</span>
             </div>
-        </div>
+            <p class="mt-2 text-xs text-slate-500">View past donation dates, volumes, and resulting barcode units.</p>
+        </a>
     </div>
 </div>
 @endsection
