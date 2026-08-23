@@ -8,20 +8,22 @@ use App\Models\BloodUnit;
 use App\Models\Hospital;
 use App\Models\Patient;
 use App\Models\User;
-use App\Notifications\EmergencyBloodRequestNotification;
 use Illuminate\Support\Facades\DB;
 
 class BloodRequestService
 {
     protected BloodUnitService $bloodUnitService;
     protected InventoryTransactionService $transactionService;
+    protected NotificationService $notificationService;
 
     public function __construct(
         BloodUnitService $bloodUnitService,
-        InventoryTransactionService $transactionService
+        InventoryTransactionService $transactionService,
+        NotificationService $notificationService
     ) {
         $this->bloodUnitService = $bloodUnitService;
         $this->transactionService = $transactionService;
+        $this->notificationService = $notificationService;
     }
 
     public function createRequest(array $data, ?User $user = null): BloodRequest
@@ -53,12 +55,15 @@ class BloodRequestService
                 'hospital'         => $data['hospital'],
                 'city'             => $data['city'] ?? 'Metropolis',
                 'reason'           => $data['reason'] ?? null,
+                'required_by'      => $data['required_by'] ?? null,
+                'urgency_level'    => $data['urgency'] ?? 'emergency',
                 'status'           => 'pending',
             ]);
 
             $urgency = $data['urgency'] ?? 'emergency';
             if ($urgency === 'emergency') {
-                $this->notifyMatchingDonors($request);
+                $this->notificationService->notifyAdminEmergencyRequest($request);
+                $this->notificationService->notifyEligibleDonors($request);
             }
 
             activity()
@@ -120,6 +125,8 @@ class BloodRequestService
                 'approved_at' => now(),
             ]);
 
+            $this->notificationService->notifyHospitalStatusChange($request, 'approved');
+
             activity()
                 ->causedBy($admin)
                 ->performedOn($request)
@@ -137,6 +144,8 @@ class BloodRequestService
                 'rejected_by' => $admin->id,
                 'rejected_at' => now(),
             ]);
+
+            $this->notificationService->notifyHospitalStatusChange($request, 'rejected', $reason);
 
             activity()
                 ->causedBy($admin)
@@ -205,6 +214,8 @@ class BloodRequestService
                 'status' => 'dispensed',
             ]);
 
+            $this->notificationService->notifyHospitalStatusChange($request, 'dispensed');
+
             activity()
                 ->causedBy($admin)
                 ->performedOn($request)
@@ -216,16 +227,6 @@ class BloodRequestService
 
     public function notifyMatchingDonors(BloodRequest $request): int
     {
-        $matchingUsers = User::where('role', 'donor')
-            ->where('status', 'active')
-            ->whereHas('donor.bloodGroup', function ($q) use ($request) {
-                $q->where('name', $request->blood_group);
-            })->get();
-
-        foreach ($matchingUsers as $matchingUser) {
-            $matchingUser->notify(new EmergencyBloodRequestNotification($request));
-        }
-
-        return $matchingUsers->count();
+        return $this->notificationService->notifyEligibleDonors($request);
     }
 }

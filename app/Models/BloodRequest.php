@@ -19,6 +19,7 @@ class BloodRequest extends Model
         'city',
         'reason',
         'status',
+        'required_by',
         'donor_id',
         'assigned_donor_id',
         'units_needed',
@@ -29,6 +30,13 @@ class BloodRequest extends Model
         'rejected_at',
         'rejected_by',
         'assigned_at',
+    ];
+
+    protected $casts = [
+        'required_by' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'assigned_at' => 'datetime',
     ];
 
     public function user()

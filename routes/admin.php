@@ -6,11 +6,13 @@ use App\Http\Controllers\Admin\DonorController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\BloodInventoryController;
 use App\Http\Controllers\Admin\BloodRequestAdminController;
+use App\Http\Controllers\Admin\EmergencyRequestAdminController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\HospitalAdminController;
 use App\Http\Controllers\Admin\PatientAdminController;
+use App\Http\Controllers\NotificationCenterController;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
     // Admin Dashboard
@@ -18,6 +20,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     
     // Activity Audit Logs
     Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+    // Emergency Operations Queue
+    Route::get('/emergency-requests', [EmergencyRequestAdminController::class, 'index'])->name('emergency_requests.index');
+
+    // User Notification Center
+    Route::get('/notifications-feed', [NotificationCenterController::class, 'index'])->name('notifications_feed.index');
+    Route::post('/notifications-feed/{notification}/read', [NotificationCenterController::class, 'markAsRead'])->name('notifications_feed.read');
+    Route::post('/notifications-feed/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.read_all');
 
     // Two-Factor Authentication Management
     Route::get('/two-factor', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'show'])->name('2fa.show');
@@ -57,7 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::post('/blood-requests/{id}/fulfill', [BloodRequestAdminController::class, 'fulfill'])->name('blood_requests.fulfill');
     Route::post('/blood-requests/{id}/dispense', [BloodRequestAdminController::class, 'dispenseBlood'])->name('blood_requests.dispense');
 
-    // Notifications Management
+    // System Broadcast Notifications Management
     Route::resource('notifications', NotificationController::class);
     Route::post('/notifications/send-bulk', [NotificationController::class, 'sendBulk'])->name('notifications.send_bulk');
     

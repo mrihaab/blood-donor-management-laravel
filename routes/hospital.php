@@ -3,10 +3,16 @@
 use App\Http\Controllers\Hospital\BloodRequestController;
 use App\Http\Controllers\Hospital\DashboardController;
 use App\Http\Controllers\Hospital\PatientController;
+use App\Http\Controllers\NotificationCenterController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('hospital')->name('hospital.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Notification Feed
+    Route::get('/notifications', [NotificationCenterController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationCenterController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications.read_all');
 
     // Patients Management
     Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');

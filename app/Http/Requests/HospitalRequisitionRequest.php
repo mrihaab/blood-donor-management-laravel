@@ -33,7 +33,8 @@ class HospitalRequisitionRequest extends FormRequest
             ],
             'blood_group' => ['required', 'string', 'exists:blood_groups,name'],
             'units_needed' => ['required', 'integer', 'min:1', 'max:50'],
-            'urgency' => ['nullable', 'string', 'in:routine,urgent,emergency'],
+            'urgency' => ['required', 'string', 'in:routine,urgent,emergency'],
+            'required_by' => ['nullable', 'date', 'after_or_equal:now'],
             'reason' => ['nullable', 'string', 'max:1000'],
         ];
     }
