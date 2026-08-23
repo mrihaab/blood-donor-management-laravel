@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('blood_unit_id')->nullable()->constrained('blood_units')->onDelete('cascade');
             $table->foreignId('blood_group_id')->constrained('blood_groups')->onDelete('cascade');
             $table->foreignId('component_id')->nullable()->constrained('blood_components')->onDelete('set null');
-            $table->enum('transaction_type', ['received', 'reserved', 'allocated', 'dispensed', 'expired', 'discarded', 'adjusted']);
+            $table->string('transaction_type');
             $table->integer('previous_quantity');
             $table->integer('quantity_changed');
             $table->integer('resulting_quantity');

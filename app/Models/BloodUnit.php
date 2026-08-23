@@ -46,4 +46,14 @@ class BloodUnit extends Model
     {
         return $this->hasMany(InventoryTransaction::class);
     }
+
+    public function transfusionUnits()
+    {
+        return $this->hasMany(TransfusionUnit::class);
+    }
+
+    public function inspections()
+    {
+        return $this->hasMany(UnitInspection::class);
+    }
 }

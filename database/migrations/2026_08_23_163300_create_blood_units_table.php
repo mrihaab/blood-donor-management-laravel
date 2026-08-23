@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('expiry_date');
             $table->integer('volume_ml')->default(450);
             $table->string('storage_location')->default('Main Refrigerator Shelf A');
-            $table->enum('status', ['available', 'reserved', 'allocated', 'dispensed', 'expired', 'discarded'])->default('available');
+            $table->string('status')->default('available');
             $table->timestamps();
 
             // Compound performance index for stock queries

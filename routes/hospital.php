@@ -3,6 +3,7 @@
 use App\Http\Controllers\Hospital\BloodRequestController;
 use App\Http\Controllers\Hospital\DashboardController;
 use App\Http\Controllers\Hospital\PatientController;
+use App\Http\Controllers\Hospital\TransfusionController;
 use App\Http\Controllers\NotificationCenterController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,4 +28,15 @@ Route::middleware(['auth', 'verified'])->prefix('hospital')->name('hospital.')->
     Route::get('/requests/create', [BloodRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [BloodRequestController::class, 'store'])->name('requests.store');
     Route::get('/requests/{request}', [BloodRequestController::class, 'show'])->name('requests.show');
+
+    // Clinical Transfusions Management
+    Route::get('/transfusions', [TransfusionController::class, 'index'])->name('transfusions.index');
+    Route::get('/transfusions/create', [TransfusionController::class, 'create'])->name('transfusions.create');
+    Route::post('/transfusions', [TransfusionController::class, 'store'])->name('transfusions.store');
+    Route::get('/transfusions/{transfusion}', [TransfusionController::class, 'show'])->name('transfusions.show');
+    Route::post('/transfusions/{transfusion}/issue', [TransfusionController::class, 'issue'])->name('transfusions.issue');
+    Route::post('/transfusions/{transfusion}/start', [TransfusionController::class, 'start'])->name('transfusions.start');
+    Route::post('/transfusions/{transfusion}/complete', [TransfusionController::class, 'complete'])->name('transfusions.complete');
+    Route::post('/transfusions/{transfusion}/stop', [TransfusionController::class, 'stop'])->name('transfusions.stop');
+    Route::post('/transfusions/{transfusion}/reaction', [TransfusionController::class, 'recordReaction'])->name('transfusions.reaction');
 });

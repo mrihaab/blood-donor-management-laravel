@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\HospitalAdminController;
 use App\Http\Controllers\Admin\PatientAdminController;
+use App\Http\Controllers\Admin\TransfusionAdminController;
 use App\Http\Controllers\NotificationCenterController;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
@@ -23,6 +24,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
 
     // Emergency Operations Queue
     Route::get('/emergency-requests', [EmergencyRequestAdminController::class, 'index'])->name('emergency_requests.index');
+
+    // Transfusions Clinical Operations
+    Route::get('/transfusions', [TransfusionAdminController::class, 'index'])->name('transfusions.index');
+    Route::get('/transfusions/{transfusion}', [TransfusionAdminController::class, 'show'])->name('transfusions.show');
+    Route::post('/units/{unit}/certify-returned', [TransfusionAdminController::class, 'certifyReturnedUnit'])->name('units.certify_returned');
 
     // User Notification Center
     Route::get('/notifications-feed', [NotificationCenterController::class, 'index'])->name('notifications_feed.index');

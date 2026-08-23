@@ -18,10 +18,12 @@ class BloodUnitService
      * State machine allowed transitions map.
      */
     protected const ALLOWED_TRANSITIONS = [
-        'available' => ['reserved', 'allocated', 'expired', 'discarded'],
-        'reserved'  => ['allocated', 'available', 'expired', 'discarded'],
+        'available' => ['reserved', 'allocated', 'dispensed', 'expired', 'discarded'],
+        'reserved'  => ['allocated', 'available', 'dispensed', 'expired', 'discarded'],
         'allocated' => ['dispensed', 'reserved', 'available', 'discarded'],
-        'dispensed' => [], // Terminal state
+        'dispensed' => ['transfused', 'returned', 'discarded'],
+        'returned'  => ['available', 'discarded'],
+        'transfused' => [], // Terminal state
         'expired'   => [], // Terminal state
         'discarded' => [], // Terminal state
     ];

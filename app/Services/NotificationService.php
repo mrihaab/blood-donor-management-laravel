@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\BloodRequest;
 use App\Models\Donor;
+use App\Models\Transfusion;
+use App\Models\TransfusionReaction;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Notifications\EmergencyBloodRequestNotification;
@@ -159,5 +161,65 @@ class NotificationService
     public function sendEmergencyBroadcast(BloodRequest $bloodRequest): int
     {
         return $this->notifyEligibleDonors($bloodRequest);
+    }
+
+    public function notifyTransfusionStarted(Transfusion $transfusion): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'transfusion',
+                "Transfusion #TR-{$transfusion->id} Started",
+                "Transfusion commenced for patient {$transfusion->patient->name} at {$transfusion->hospital->name}.",
+                ['transfusion_id' => $transfusion->id]
+            );
+        }
+    }
+
+    public function notifyTransfusionCompleted(Transfusion $transfusion): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'transfusion',
+                "Transfusion #TR-{$transfusion->id} Completed",
+                "Transfusion completed successfully for patient {$transfusion->patient->name}.",
+                ['transfusion_id' => $transfusion->id]
+            );
+        }
+    }
+
+    public function notifyTransfusionReaction(TransfusionReaction $reaction): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        $severityUpper = strtoupper($reaction->severity);
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'reaction',
+                "ALERT: {$severityUpper} Transfusion Reaction Recorded",
+                "Transfusion #TR-{$reaction->transfusion_id} recorded a {$reaction->severity} reaction: {$reaction->symptoms}",
+                [
+                    'transfusion_id' => $reaction->transfusion_id,
+                    'severity' => $reaction->severity,
+                ]
+            );
+        }
+    }
+
+    public function notifyTransfusionStopped(Transfusion $transfusion, string $reason): void
+    {
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'transfusion',
+                "WARNING: Transfusion #TR-{$transfusion->id} Stopped",
+                "Transfusion stopped for patient {$transfusion->patient->name}. Reason: {$reason}",
+                ['transfusion_id' => $transfusion->id, 'reason' => $reason]
+            );
+        }
     }
 }

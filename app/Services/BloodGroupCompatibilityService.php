@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\BloodUnit;
+use App\Models\Patient;
+
 class BloodGroupCompatibilityService
 {
     /**
@@ -35,5 +38,23 @@ class BloodGroupCompatibilityService
         $donorNorm = strtoupper(trim($donorGroup));
         $compatible = $this->getCompatibleDonorGroups($recipientGroup);
         return in_array($donorNorm, $compatible, true);
+    }
+
+    /**
+     * Validate patient vs unit compatibility server-side.
+     */
+    public function validatePatientUnitCompatibility(Patient $patient, BloodUnit $unit): bool
+    {
+        $patientGroup = $patient->bloodGroup ? $patient->bloodGroup->name : null;
+        if (!$patientGroup) {
+            return false;
+        }
+
+        $unitGroup = $unit->bloodGroup ? $unit->bloodGroup->name : null;
+        if (!$unitGroup) {
+            return false;
+        }
+
+        return $this->isCompatible($unitGroup, $patientGroup);
     }
 }
