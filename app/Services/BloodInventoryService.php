@@ -3,32 +3,48 @@
 namespace App\Services;
 
 use App\Models\BloodGroup;
-use App\Models\BloodInventory;
+use App\Models\BloodUnit;
 use App\Models\SystemSetting;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class BloodInventoryService
 {
+    protected BloodUnitService $bloodUnitService;
+    protected InventoryTransactionService $transactionService;
+
+    public function __construct(
+        BloodUnitService $bloodUnitService,
+        InventoryTransactionService $transactionService
+    ) {
+        $this->bloodUnitService = $bloodUnitService;
+        $this->transactionService = $transactionService;
+    }
+
+    /**
+     * Overview derived directly from BloodUnit as single source of truth.
+     */
     public function getInventoryOverview()
     {
         $bloodGroups = BloodGroup::all();
 
         return $bloodGroups->map(function ($group) {
-            $availableUnits = BloodInventory::where('blood_group_id', $group->id)
+            // Count physical BloodUnit bags that are available AND not expired
+            $availableUnits = BloodUnit::where('blood_group_id', $group->id)
                 ->where('status', 'available')
-                ->where('expiry_date', '>', now())
-                ->sum('units_available');
+                ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                ->count();
 
-            $requestedUnits = BloodInventory::where('blood_group_id', $group->id)
-                ->where('status', 'reserved')
-                ->sum('units_requested');
+            $reservedUnits = BloodUnit::where('blood_group_id', $group->id)
+                ->whereIn('status', ['reserved', 'allocated'])
+                ->count();
 
             return [
-                'blood_group_id' => $group->id,
-                'blood_group' => $group->name,
+                'blood_group_id'  => $group->id,
+                'blood_group'     => $group->name,
                 'units_available' => (int) $availableUnits,
-                'units_requested' => (int) $requestedUnits,
-                'last_updated' => now()->format('M d, Y'),
+                'units_requested' => (int) $reservedUnits,
+                'last_updated'    => now()->format('M d, Y'),
             ];
         });
     }
@@ -42,39 +58,80 @@ class BloodInventoryService
         })->values();
     }
 
-    public function reserveUnits(int $bloodGroupId, int $unitsToReserve): bool
+    /**
+     * Reserve physical blood units atomically with pessimistic row locking.
+     */
+    public function reserveUnits(int $bloodGroupId, int $unitsToReserve, ?User $actor = null, ?string $reason = null): bool
     {
-        return DB::transaction(function () use ($bloodGroupId, $unitsToReserve) {
-            $inventoryItems = BloodInventory::where('blood_group_id', $bloodGroupId)
+        return DB::transaction(function () use ($bloodGroupId, $unitsToReserve, $actor, $reason) {
+            // Fetch eligible units with pessimistic lock
+            $eligibleUnits = BloodUnit::where('blood_group_id', $bloodGroupId)
                 ->where('status', 'available')
-                ->where('expiry_date', '>', now())
-                ->where('units_available', '>', 0)
+                ->where('expiry_date', '>=', now()->format('Y-m-d'))
                 ->lockForUpdate()
+                ->take($unitsToReserve)
                 ->get();
 
-            $totalAvailable = $inventoryItems->sum('units_available');
-
-            if ($totalAvailable < $unitsToReserve) {
+            if ($eligibleUnits->count() < $unitsToReserve) {
                 return false;
             }
 
-            $remainingNeeded = $unitsToReserve;
+            foreach ($eligibleUnits as $unit) {
+                $this->bloodUnitService->transitionStatus(
+                    unit: $unit,
+                    newStatus: 'reserved',
+                    reason: $reason ?? 'Inventory reservation for blood request',
+                    actor: $actor
+                );
 
-            foreach ($inventoryItems as $item) {
-                if ($remainingNeeded <= 0) break;
-
-                $deduct = min($item->units_available, $remainingNeeded);
-                $item->decrement('units_available', $deduct);
-                $item->increment('units_requested', $deduct);
-
-                if ($item->fresh()->units_available <= 0) {
-                    $item->update(['status' => 'reserved']);
-                }
-
-                $remainingNeeded -= $deduct;
+                $this->transactionService->logTransaction(
+                    bloodUnit: $unit,
+                    transactionType: 'reserved',
+                    previousQuantity: $unit->volume_ml,
+                    quantityChanged: 0,
+                    resultingQuantity: $unit->volume_ml,
+                    reason: $reason ?? 'Inventory reservation',
+                    actor: $actor
+                );
             }
 
             return true;
+        });
+    }
+
+    /**
+     * Process expired units and update status & log audit transactions.
+     */
+    public function processExpiredUnits(): int
+    {
+        return DB::transaction(function () {
+            $expiredUnits = BloodUnit::where('status', 'available')
+                ->where('expiry_date', '<', now()->format('Y-m-d'))
+                ->lockForUpdate()
+                ->get();
+
+            $count = 0;
+            foreach ($expiredUnits as $unit) {
+                $this->bloodUnitService->transitionStatus(
+                    unit: $unit,
+                    newStatus: 'expired',
+                    reason: 'Automated expiration scan',
+                    actor: null
+                );
+
+                $this->transactionService->logTransaction(
+                    bloodUnit: $unit,
+                    transactionType: 'expired',
+                    previousQuantity: $unit->volume_ml,
+                    quantityChanged: -$unit->volume_ml,
+                    resultingQuantity: 0,
+                    reason: 'Unit reached shelf life expiration date',
+                    actor: null
+                );
+                $count++;
+            }
+
+            return $count;
         });
     }
 }

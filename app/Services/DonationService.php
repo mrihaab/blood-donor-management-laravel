@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BloodComponent;
 use App\Models\BloodInventory;
 use App\Models\Donation;
 use App\Models\Donor;
@@ -12,10 +13,17 @@ use Illuminate\Support\Facades\DB;
 class DonationService
 {
     protected DonorEligibilityService $eligibilityService;
+    protected BloodUnitService $bloodUnitService;
+    protected InventoryTransactionService $transactionService;
 
-    public function __construct(DonorEligibilityService $eligibilityService)
-    {
+    public function __construct(
+        DonorEligibilityService $eligibilityService,
+        BloodUnitService $bloodUnitService,
+        InventoryTransactionService $transactionService
+    ) {
         $this->eligibilityService = $eligibilityService;
+        $this->bloodUnitService = $bloodUnitService;
+        $this->transactionService = $transactionService;
     }
 
     public function recordDonation(Donor $donor, array $data, ?User $createdBy = null): Donation
@@ -38,8 +46,35 @@ class DonationService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            $expiryDate = Carbon::parse($donation->donation_date)->addDays(42);
+            // Determine blood component (default PRBC if unspecified)
+            $componentCode = $data['component_code'] ?? 'PRBC';
+            $component = BloodComponent::where('code', $componentCode)->first()
+                ?? BloodComponent::where('code', 'PRBC')->first()
+                ?? BloodComponent::first();
 
+            // Create physical BloodUnit with dynamic shelf-life calculation
+            $bloodUnit = $this->bloodUnitService->createUnitFromDonation(
+                $donor,
+                $donation,
+                $component,
+                $data['storage_location'] ?? 'Main Refrigerator Bay 1'
+            );
+
+            // Log auditable InventoryTransaction
+            $this->transactionService->logTransaction(
+                bloodUnit: $bloodUnit,
+                transactionType: 'received',
+                previousQuantity: 0,
+                quantityChanged: $donation->quantity,
+                resultingQuantity: $donation->quantity,
+                reason: "Donation intake for donor #{$donor->id}",
+                actor: $createdBy ?? auth()->user(),
+                referenceType: Donation::class,
+                referenceId: $donation->id
+            );
+
+            // Update legacy aggregate table blood_inventory as derived sync layer
+            $expiryDate = Carbon::parse($donation->donation_date)->addDays($component->shelf_life_days);
             BloodInventory::create([
                 'blood_group_id' => $donor->blood_group_id,
                 'donor_id' => $donor->id,
@@ -51,6 +86,7 @@ class DonationService
                 'status' => 'available',
             ]);
 
+            // Update donor last_donation_date
             $donor->update([
                 'last_donation_date' => $donation->donation_date,
             ]);
@@ -58,7 +94,7 @@ class DonationService
             activity()
                 ->causedBy($createdBy ?? auth()->user())
                 ->performedOn($donation)
-                ->log("Donation of {$donation->quantity}ml recorded for donor {$donor->user->name}");
+                ->log("Donation of {$donation->quantity}ml recorded with BloodUnit #{$bloodUnit->unit_number}");
 
             return $donation;
         });

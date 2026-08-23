@@ -21,7 +21,7 @@ class EmergencyBloodRequestNotification extends Notification implements ShouldQu
 
     public function via($notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     public function toMail($notifiable): MailMessage
