@@ -11,6 +11,8 @@ class BloodRequest extends Model
 
     protected $fillable = [
         'user_id',
+        'hospital_id',
+        'patient_id',
         'blood_group',
         'patient_name',
         'hospital',
@@ -39,19 +41,26 @@ class BloodRequest extends Model
         return $this->belongsTo(Donor::class);
     }
 
-    // Since blood_group is stored as string, create a helper method
+    public function hospitalEntity()
+    {
+        return $this->belongsTo(Hospital::class, 'hospital_id');
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
     public function getBloodGroupAttribute($value)
     {
         return $value;
     }
 
-    // Create a pseudo relationship for compatibility
     public function bloodGroup()
     {
         return BloodGroup::where('name', $this->blood_group)->first();
     }
 
-    // Scope for filtering by blood group
     public function scopeByBloodGroup($query, $bloodGroup)
     {
         return $query->where('blood_group', $bloodGroup);
