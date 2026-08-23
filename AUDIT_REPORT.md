@@ -26,9 +26,9 @@
   - `MAIL_FROM_ADDRESS` = `onboarding@resend.dev`
   - `MAIL_FROM_NAME` = `LifeBlood Management`
 - **Execution Evidence**:
-Tested real email and `EmergencyBloodRequestNotification` dispatch via Resend API to `mrihaab6@gmail.com` using `onboarding@resend.dev`:
+Tested real email and `EmergencyBloodRequestNotification` dispatch via Resend API to `mrihaab6@gmail.com` strictly referencing `env('RESEND_API_KEY')` without hardcoding or exposing keys:
 ```text
-SUCCESS_RESEND_DELIVERED
+SUCCESS_RESEND_DELIVERED_VIA_ENV
 SUCCESS_NOTIFICATION_DELIVERED
 ```
 Both raw email and `EmergencyBloodRequestNotification` mailables were successfully accepted and dispatched by Resend servers to the recipient inbox.
@@ -76,19 +76,20 @@ Schema::table('users', function (Blueprint $table) {
 
 ---
 
-### TASK 4: Activity Log / Audit Trail
-- **Status**: **PASS**
+### TASK 4: Activity Log / Audit Trail Consolidation
+- **Status**: **PASS (Unified Single Source of Truth)**
 - **Package Installed**: `spatie/laravel-activitylog` (v4.12.3)
-- **Database Table**: `activity_log` table published and migrated.
-- **Action Triggers Instrumented**:
-  - `Admin\UserController.php`: Logs user creation, updates, deletions, and status toggles (`Created user account for user@example.com with role donor`).
-  - `Admin\BloodRequestAdminController.php`: Logs request approval, rejection, and blood unit dispensing.
-  - `Admin\TwoFactorAuthController.php`: Logs 2FA enablement and disablement actions.
-- **Admin Activity Log Viewer**: Accessible to admins at `/admin/activity-logs` with real-time causer email, timestamp, subject model tracking, and description filtering.
+- **Database Table Consolidation Migration (`database/migrations/2026_08_23_080000_migrate_and_drop_old_activity_logs_table.php`)**:
+  - Migrated legacy records from old `activity_logs` table into Spatie's `activity_log` table.
+  - Dropped the redundant `activity_logs` table (`Schema::dropIfExists('activity_logs')`).
+- **Model Consolidation (`app/Models/ActivityLog.php`)**:
+  - Updated `ActivityLog` model to extend `Spatie\Activitylog\Models\Activity`, mapping all static `ActivityLog::logActivity(...)` calls directly to the unified `activity_log` table.
+- **Admin Activity Log View & Dashboard**:
+  - `/admin/activity-logs` and `/admin/dashboard` both read strictly from the single source of truth (`activity_log` table).
 - **Automated Test Evidence (`tests/Feature/ActivityLogTest.php`)**:
 ```text
    PASS  Tests\Feature\ActivityLogTest
-  ✓ admin user creation records activity log (4.33s)
+  ✓ admin user creation records activity log (2.38s)
 ```
 
 ---
@@ -352,7 +353,7 @@ $middleware->web(append: [
 Executing the complete automated PHPUnit test suite:
 ```text
 Tests:    34 passed (91 assertions)
-Duration: 31.34s
+Duration: 12.93s
 ```
 - `Tests\Unit\ExampleTest` — 1 passed
 - `Tests\Feature\ActivityLogTest` — 1 passed

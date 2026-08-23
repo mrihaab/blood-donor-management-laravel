@@ -2,31 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Models\Activity;
 
-class ActivityLog extends Model
+class ActivityLog extends Activity
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'message',
-        'user_id',
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     /**
-     * Log an activity
+     * Log an activity into the unified Spatie activity_log table.
      */
     public static function logActivity($message, $userId = null)
     {
-        return self::create([
-            'message' => $message,
-            'user_id' => $userId ?? auth()->id(),
-        ]);
+        $causer = $userId ? User::find($userId) : auth()->user();
+        
+        $activity = activity();
+        if ($causer) {
+            $activity->causedBy($causer);
+        }
+
+        return $activity->log($message);
     }
 }

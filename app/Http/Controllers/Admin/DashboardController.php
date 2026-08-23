@@ -9,9 +9,9 @@ use App\Models\BloodGroup;
 use App\Models\BloodRequest;
 use App\Models\BloodInventory;
 use App\Models\Donation;
-use App\Models\ActivityLog;
 use App\Models\User;
 use App\Models\SystemSetting;
+use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -82,16 +82,16 @@ class DashboardController extends Controller
             ->orderBy('total', 'desc')
             ->get();
 
-        // Recent Activities
-        $recentActivities = ActivityLog::with('user')
+        // Recent Activities from single source of truth (activity_log)
+        $recentActivities = Activity::with('causer')
             ->latest()
             ->limit(10)
             ->get()
             ->map(function ($activity) {
                 return [
                     'id' => $activity->id,
-                    'message' => $activity->message,
-                    'user_name' => $activity->user->name ?? 'System',
+                    'message' => $activity->description,
+                    'user_name' => optional($activity->causer)->name ?? 'System',
                     'created_at' => $activity->created_at->diffForHumans()
                 ];
             });
