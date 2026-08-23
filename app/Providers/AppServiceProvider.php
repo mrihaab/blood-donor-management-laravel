@@ -2,6 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Appointment;
+use App\Models\BloodRequest;
+use App\Models\Donation;
+use App\Models\Donor;
+use App\Models\User;
+use App\Policies\AppointmentPolicy;
+use App\Policies\BloodRequestPolicy;
+use App\Policies\DonationPolicy;
+use App\Policies\DonorPolicy;
+use App\Policies\UserPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -26,5 +37,11 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production' || request()->header('x-forwarded-proto') === 'https') {
             URL::forceScheme('https');
         }
+
+        Gate::policy(Donor::class, DonorPolicy::class);
+        Gate::policy(Appointment::class, AppointmentPolicy::class);
+        Gate::policy(BloodRequest::class, BloodRequestPolicy::class);
+        Gate::policy(Donation::class, DonationPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

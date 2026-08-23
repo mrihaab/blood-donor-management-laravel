@@ -3,127 +3,72 @@
 namespace App\Http\Controllers\Donor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Donor\StoreAppointmentRequest;
 use App\Models\Appointment;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Services\AppointmentService;
 
 class AppointmentController extends Controller
 {
+    protected AppointmentService $appointmentService;
+
+    public function __construct(AppointmentService $appointmentService)
+    {
+        $this->appointmentService = $appointmentService;
+    }
+
     public function index()
     {
-        $appointments = Appointment::whereHas('donor', function($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->with(['donor.bloodGroup'])
-            ->orderBy('appointment_date', 'desc')
-            ->get();
+        $user = auth()->user();
+        $appointments = $user->donor
+            ? Appointment::where('donor_id', $user->donor->id)->latest()->get()
+            : collect();
 
-        return view('donor.appointments.index', [
-            'appointments' => $appointments
-        ]);
+        return view('donor.appointments.index', compact('appointments'));
     }
 
     public function create()
     {
+        $user = auth()->user();
+        if (!$user->donor) {
+            return redirect()->route('donor.profile.edit')
+                ->with('error', 'Please complete your donor profile before scheduling an appointment.');
+        }
+
         return view('donor.appointments.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreAppointmentRequest $request)
     {
-        $request->validate([
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required',
-            'notes' => 'nullable|string',
-            'units_to_donate' => 'required|integer|min:1|max:2',
-        ]);
-
-        $donor = Auth::user()->donor;
-
-        if (!$donor) {
-            return back()->withErrors(['error' => 'Donor profile not found.']);
+        $user = auth()->user();
+        if (!$user->donor) {
+            return redirect()->route('donor.profile.edit')
+                ->with('error', 'Please complete your donor profile first.');
         }
 
-        if (!$donor->isEligibleToDonate()) {
-            $nextDate = $donor->getNextEligibleDate()->format('Y-m-d');
-            $daysLeft = $donor->getDaysUntilEligible();
-
-            return back()->withErrors([
-                'appointment_date' => "You are not eligible to donate again until {$nextDate}. Please wait {$daysLeft} more days.",
-            ]);
+        try {
+            $this->appointmentService->bookAppointment($user->donor, $request->validated());
+            return redirect()->route('donor.appointments.index')
+                ->with('success', 'Appointment booked successfully.');
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['appointment_date' => $e->getMessage()]);
         }
-
-        Appointment::create([
-            'donor_id' => $donor->id,
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-            'notes' => $request->notes,
-            'units_to_donate' => $request->units_to_donate,
-            'status' => 'scheduled',
-        ]);
-
-        return redirect()->route('donor.appointments.index')
-            ->with('success', 'Appointment scheduled successfully.');
     }
 
     public function show($id)
     {
-        $appointment = Appointment::whereHas('donor', function($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->with(['donor.bloodGroup'])
-            ->findOrFail($id);
+        $appointment = Appointment::findOrFail($id);
+        $this->authorize('view', $appointment);
 
-        return view('donor.appointments.show', [
-            'appointment' => $appointment
-        ]);
+        return view('donor.appointments.show', compact('appointment'));
     }
 
-    public function edit($id)
+    public function cancel($id)
     {
-        $appointment = Appointment::whereHas('donor', function($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->findOrFail($id);
+        $appointment = Appointment::findOrFail($id);
+        $this->authorize('cancel', $appointment);
 
-        // Only allow editing of scheduled appointments
-        if ($appointment->status !== 'scheduled') {
-            return redirect()->route('donor.appointments.index')
-                ->with('error', 'Only scheduled appointments can be edited.');
-        }
+        $this->appointmentService->updateStatus($appointment, 'cancelled', auth()->user());
 
-        return view('donor.appointments.edit', [
-            'appointment' => $appointment
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $appointment = Appointment::whereHas('donor', function($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->findOrFail($id);
-
-        // Only allow editing of scheduled appointments
-        if ($appointment->status !== 'scheduled') {
-            return redirect()->route('donor.appointments.index')
-                ->with('error', 'Only scheduled appointments can be edited.');
-        }
-
-        $request->validate([
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required',
-            'notes' => 'nullable|string',
-            'units_to_donate' => 'required|integer|min:1|max:2',
-        ]);
-
-        $appointment->update([
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-            'notes' => $request->notes,
-            'units_to_donate' => $request->units_to_donate,
-        ]);
-
-        return redirect()->route('donor.appointments.index')
-            ->with('success', 'Appointment updated successfully.');
+        return back()->with('success', 'Appointment cancelled successfully.');
     }
 }
