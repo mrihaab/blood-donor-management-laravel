@@ -14,10 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all reverse proxies (Render, Cloudflare, Load Balancers)
         $middleware->trustProxies(at: '*');
 
-        // Default web middleware (Inertia.js setup)
+        // Default web middleware (Inertia.js & Security Headers)
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
         // Register custom middleware aliases

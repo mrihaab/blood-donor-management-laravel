@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
 class AppointmentController extends Controller
 {
     public function index()
@@ -16,7 +17,7 @@ class AppointmentController extends Controller
             ->with(['donor.bloodGroup'])
             ->orderBy('appointment_date', 'desc')
             ->get();
-            
+
         return view('donor.appointments.index', [
             'appointments' => $appointments
         ]);
@@ -37,9 +38,18 @@ class AppointmentController extends Controller
         ]);
 
         $donor = Auth::user()->donor;
-        
+
         if (!$donor) {
             return back()->withErrors(['error' => 'Donor profile not found.']);
+        }
+
+        if (!$donor->isEligibleToDonate()) {
+            $nextDate = $donor->getNextEligibleDate()->format('Y-m-d');
+            $daysLeft = $donor->getDaysUntilEligible();
+
+            return back()->withErrors([
+                'appointment_date' => "You are not eligible to donate again until {$nextDate}. Please wait {$daysLeft} more days.",
+            ]);
         }
 
         Appointment::create([
@@ -62,7 +72,7 @@ class AppointmentController extends Controller
             })
             ->with(['donor.bloodGroup'])
             ->findOrFail($id);
-            
+
         return view('donor.appointments.show', [
             'appointment' => $appointment
         ]);
@@ -74,13 +84,13 @@ class AppointmentController extends Controller
                 $query->where('user_id', Auth::id());
             })
             ->findOrFail($id);
-            
+
         // Only allow editing of scheduled appointments
         if ($appointment->status !== 'scheduled') {
             return redirect()->route('donor.appointments.index')
                 ->with('error', 'Only scheduled appointments can be edited.');
         }
-        
+
         return view('donor.appointments.edit', [
             'appointment' => $appointment
         ]);
@@ -92,13 +102,13 @@ class AppointmentController extends Controller
                 $query->where('user_id', Auth::id());
             })
             ->findOrFail($id);
-            
+
         // Only allow editing of scheduled appointments
         if ($appointment->status !== 'scheduled') {
             return redirect()->route('donor.appointments.index')
                 ->with('error', 'Only scheduled appointments can be edited.');
         }
-        
+
         $request->validate([
             'appointment_date' => 'required|date|after_or_equal:today',
             'appointment_time' => 'required',

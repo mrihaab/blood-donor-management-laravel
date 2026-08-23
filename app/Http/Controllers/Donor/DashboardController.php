@@ -54,17 +54,15 @@ class DashboardController extends Controller
             return $query->where('blood_group', $bloodGroupName);
         })->count();
 
-        // Calculate next eligible donation date (+56 days as per WHO guidelines)
-        $nextEligibleDate = $latestDonation
-            ? ($latestDonation->donation_date
-                ? date('Y-m-d', strtotime($latestDonation->donation_date . ' + 56 days'))
-                : date('Y-m-d', strtotime($latestDonation->created_at . ' + 56 days')))
-            : now()->toDateString();
+        // Single source of truth from Donor model methods
+        $nextEligibleDate = $donor->getNextEligibleDate()->format('Y-m-d');
+        $isEligible = $donor->isEligibleToDonate();
 
         return view('donor.dashboard', [
             'totalDonations' => $totalDonations,
             'latestDonation' => $latestDonation,
             'nextEligibleDate' => $nextEligibleDate,
+            'isEligible' => $isEligible,
             'upcomingAppointments' => $upcomingAppointments,
             'recentAppointments' => $recentAppointments,
             'bloodRequests' => $bloodRequests,
