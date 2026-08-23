@@ -21,9 +21,8 @@ class AppointmentService
         $eligibility = $this->eligibilityService->checkEligibility($donor);
 
         if (!$eligibility['eligible']) {
-            $nextDate = $eligibility['next_eligible_date']->format('Y-m-d');
-            $daysLeft = $eligibility['days_until_eligible'];
-            throw new \InvalidArgumentException("You are not eligible to donate again until {$nextDate}. Please wait {$daysLeft} more days.");
+            $reasonStr = !empty($eligibility['reasons']) ? implode(' ', $eligibility['reasons']) : 'Donor is currently ineligible.';
+            throw new \InvalidArgumentException($reasonStr);
         }
 
         return DB::transaction(function () use ($donor, $data) {
@@ -46,23 +45,39 @@ class AppointmentService
         });
     }
 
-    public function updateStatus(Appointment $appointment, string $status, ?User $actor = null): bool
+    public function transitionState(Appointment $appointment, string $targetStatus, ?User $actor = null): bool
     {
-        $validStatuses = ['scheduled', 'completed', 'cancelled', 'no_show'];
-        
-        if (!in_array($status, $validStatuses, true)) {
-            throw new \InvalidArgumentException("Invalid appointment status: {$status}");
+        $allowedTransitions = [
+            'scheduled' => ['checked_in', 'cancelled', 'no_show'],
+            'checked_in' => ['screening', 'cancelled'],
+            'screening' => ['donation_in_progress', 'deferred', 'cancelled'],
+            'donation_in_progress' => ['completed', 'cancelled'],
+            'completed' => [],
+            'cancelled' => [],
+            'no_show' => [],
+            'deferred' => [],
+        ];
+
+        $currentStatus = $appointment->status;
+
+        if (!isset($allowedTransitions[$currentStatus]) || !in_array($targetStatus, $allowedTransitions[$currentStatus], true)) {
+            throw new \InvalidArgumentException("Invalid appointment status transition from {$currentStatus} to {$targetStatus}.");
         }
 
-        return DB::transaction(function () use ($appointment, $status, $actor) {
-            $appointment->update(['status' => $status]);
+        return DB::transaction(function () use ($appointment, $targetStatus, $actor) {
+            $appointment->update(['status' => $targetStatus]);
 
             activity()
                 ->causedBy($actor ?? auth()->user())
                 ->performedOn($appointment)
-                ->log("Appointment #{$appointment->id} status updated to {$status}");
+                ->log("Appointment #{$appointment->id} transitioned to {$targetStatus}");
 
             return true;
         });
+    }
+
+    public function updateStatus(Appointment $appointment, string $status, ?User $actor = null): bool
+    {
+        return $this->transitionState($appointment, $status, $actor);
     }
 }

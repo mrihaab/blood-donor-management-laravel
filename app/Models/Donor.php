@@ -52,6 +52,16 @@ class Donor extends Model
         return $this->hasMany(Appointment::class);
     }
 
+    public function deferrals()
+    {
+        return $this->hasMany(DonorDeferral::class);
+    }
+
+    public function screenings()
+    {
+        return $this->hasMany(DonorScreening::class);
+    }
+
     // Helper property to get blood group name
     public function getBloodGroupNameAttribute()
     {

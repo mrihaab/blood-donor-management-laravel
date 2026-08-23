@@ -26,6 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         if ($user && $user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
+        if ($user && $user->role === 'hospital') {
+            return redirect()->route('hospital.dashboard');
+        }
         return redirect()->route('donor.dashboard');
     })->name('dashboard');
 
@@ -36,4 +39,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Blood Donor System Routes
 require __DIR__.'/admin.php';
+require __DIR__.'/hospital.php';
 require __DIR__.'/donor.php';

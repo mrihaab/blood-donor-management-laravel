@@ -21,6 +21,11 @@ class Hospital extends Model
         'status',
     ];
 
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function patients()
     {
         return $this->hasMany(Patient::class);

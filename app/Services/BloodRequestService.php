@@ -80,10 +80,11 @@ class BloodRequestService
             $group = BloodGroup::where('name', $request->blood_group)->first();
             $groupId = $group ? $group->id : null;
 
-            // Fetch available unexpired units with pessimistic lock
+            // Fetch available unexpired units sorted by FEFO (earliest expiry first) with pessimistic lock
             $eligibleUnits = BloodUnit::where('blood_group_id', $groupId)
                 ->where('status', 'available')
                 ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                ->orderBy('expiry_date', 'asc')
                 ->lockForUpdate()
                 ->take($request->units_needed)
                 ->get();
@@ -156,18 +157,20 @@ class BloodRequestService
             $group = BloodGroup::where('name', $request->blood_group)->first();
             $groupId = $group ? $group->id : null;
 
-            // Fetch allocated/reserved units for this request or matching blood group
+            // Fetch allocated/reserved units for this request or matching blood group sorted by FEFO
             $allocatedUnits = BloodUnit::where('blood_group_id', $groupId)
                 ->whereIn('status', ['allocated', 'reserved'])
+                ->orderBy('expiry_date', 'asc')
                 ->lockForUpdate()
                 ->take($request->units_needed)
                 ->get();
 
             if ($allocatedUnits->count() < $request->units_needed) {
-                // If not pre-allocated, attempt allocating available units directly
+                // If not pre-allocated, attempt allocating available units directly sorted by FEFO
                 $allocatedUnits = BloodUnit::where('blood_group_id', $groupId)
                     ->where('status', 'available')
                     ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                    ->orderBy('expiry_date', 'asc')
                     ->lockForUpdate()
                     ->take($request->units_needed)
                     ->get();

@@ -33,4 +33,9 @@ class Appointment extends Model
     {
         return $this->belongsTo(User::class, 'donor_id', 'id');
     }
+
+    public function screening()
+    {
+        return $this->hasOne(DonorScreening::class);
+    }
 }

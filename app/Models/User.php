@@ -16,6 +16,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'hospital_id',
         'status',
     ];
 
@@ -28,29 +30,38 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function isAdmin()
-{
-    return $this->role === 'admin';
-}
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 
-    // ✅ Relationship: A user has one donor profile (only if role is 'donor')
-  public function donor()
-{
-    return $this->hasOne(Donor::class);
-}
+    public function isHospital(): bool
+    {
+        return $this->role === 'hospital';
+    }
 
+    public function isDonor(): bool
+    {
+        return $this->role === 'donor';
+    }
 
-    // ✅ Optional helper if you want to quickly get blood group from user
-   public function bloodGroup()
-{
-    return $this->belongsTo(BloodGroup::class, 'blood_group_id');
-}
+    public function donor()
+    {
+        return $this->hasOne(Donor::class);
+    }
 
+    public function hospital()
+    {
+        return $this->belongsTo(Hospital::class);
+    }
 
-    // ✅ Optional helper if you want to access donations via user
-  public function donations()
-{
-    return $this->hasMany(\App\Models\Donation::class, 'donor_id');
-}
+    public function bloodGroup()
+    {
+        return $this->belongsTo(BloodGroup::class, 'blood_group_id');
+    }
 
+    public function donations()
+    {
+        return $this->hasMany(\App\Models\Donation::class, 'donor_id');
+    }
 }

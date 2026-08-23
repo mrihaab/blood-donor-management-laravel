@@ -59,15 +59,16 @@ class BloodInventoryService
     }
 
     /**
-     * Reserve physical blood units atomically with pessimistic row locking.
+     * Reserve physical blood units atomically with FEFO (First Expire, First Out) selection & pessimistic row locking.
      */
     public function reserveUnits(int $bloodGroupId, int $unitsToReserve, ?User $actor = null, ?string $reason = null): bool
     {
         return DB::transaction(function () use ($bloodGroupId, $unitsToReserve, $actor, $reason) {
-            // Fetch eligible units with pessimistic lock
+            // Fetch eligible units sorted by FEFO (earliest expiry first) with pessimistic lock
             $eligibleUnits = BloodUnit::where('blood_group_id', $bloodGroupId)
                 ->where('status', 'available')
                 ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                ->orderBy('expiry_date', 'asc')
                 ->lockForUpdate()
                 ->take($unitsToReserve)
                 ->get();
@@ -101,6 +102,7 @@ class BloodInventoryService
 
     /**
      * Process expired units and update status & log audit transactions.
+     * Idempotent operation.
      */
     public function processExpiredUnits(): int
     {
