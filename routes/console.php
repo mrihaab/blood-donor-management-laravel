@@ -3,6 +3,7 @@
 use App\Models\Donor;
 use App\Models\Appointment;
 use App\Services\BloodInventoryService;
+use App\Services\DonorDeferralService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -30,6 +31,14 @@ Artisan::command('donors:send-reminders', function () {
 
     $this->info("{$count} donors eligible for reminders.");
 })->purpose('Send reminders to eligible blood donors');
+
+Artisan::command('donors:check-deferral-expiries', function () {
+    $deferralService = app(DonorDeferralService::class);
+    $result = $deferralService->processExpiredDeferrals();
+
+    $this->info("Expired {$result['expired_deferrals']} temporary donor deferral(s).");
+    $this->info("Reactivated {$result['reactivated_donors']} donor(s).");
+})->purpose('Check and expire temporary donor deferrals past their end date');
 
 Artisan::command('inventory:check-expiry', function () {
     $inventoryService = app(BloodInventoryService::class);
@@ -59,6 +68,7 @@ Artisan::command('donors:create-test-data', function () {
 // Scheduling Setup (for Laravel 11)
 Artisan::command('schedule:run-custom', function (Schedule $schedule) {
     $schedule->command('donors:send-reminders')->weekly();
+    $schedule->command('donors:check-deferral-expiries')->daily();
     $schedule->command('inventory:check-expiry')->daily();
     $schedule->command('appointments:cleanup')->monthly();
     

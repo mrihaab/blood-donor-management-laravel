@@ -36,6 +36,8 @@ class DonorDeferralService
                 'status' => 'active',
             ]);
 
+            $donor->update(['is_available' => false]);
+
             activity()
                 ->performedOn($donor)
                 ->causedBy($actor ?? auth()->user())
@@ -52,6 +54,14 @@ class DonorDeferralService
                 'status' => 'revoked',
                 'notes' => ($deferral->notes ? $deferral->notes . "\n" : '') . "Revoked by {$actor->name}: {$reason}",
             ]);
+
+            $hasOtherActiveDeferral = DonorDeferral::where('donor_id', $deferral->donor_id)
+                ->where('status', 'active')
+                ->exists();
+
+            if (!$hasOtherActiveDeferral) {
+                $deferral->donor->update(['is_available' => true]);
+            }
 
             activity()
                 ->performedOn($deferral->donor)
@@ -79,5 +89,51 @@ class DonorDeferralService
         }
 
         return $deferral;
+    }
+
+    /**
+     * Process expired temporary donor deferrals and reactivate eligible donors safely.
+     */
+    public function processExpiredDeferrals(): array
+    {
+        return DB::transaction(function () {
+            $expiredDeferrals = DonorDeferral::where('status', 'active')
+                ->where('deferral_type', 'temporary')
+                ->whereNotNull('end_date')
+                ->where('end_date', '<=', now()->format('Y-m-d'))
+                ->get();
+
+            $expiredCount = 0;
+            $reactivatedDonors = 0;
+            $blockedDonors = 0;
+
+            foreach ($expiredDeferrals as $deferral) {
+                $deferral->update(['status' => 'expired']);
+                $expiredCount++;
+
+                $donor = $deferral->donor;
+                if ($donor) {
+                    $hasOtherActiveDeferral = DonorDeferral::where('donor_id', $donor->id)
+                        ->where('status', 'active')
+                        ->exists();
+
+                    if (!$hasOtherActiveDeferral) {
+                        $donor->update([
+                            'is_available' => true,
+                            'status' => 'active',
+                        ]);
+                        $reactivatedDonors++;
+                    } else {
+                        $blockedDonors++;
+                    }
+                }
+            }
+
+            return [
+                'expired_deferrals' => $expiredCount,
+                'reactivated_donors' => $reactivatedDonors,
+                'still_blocked_donors' => $blockedDonors,
+            ];
+        });
     }
 }
