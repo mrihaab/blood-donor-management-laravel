@@ -1,0 +1,131 @@
+services:
+  # 1. Main Web Service
+  - type: web
+    name: lifeblood-web
+    env: php
+    plan: starter
+    buildCommand: "composer install --no-dev --optimize-autoloader && npm install && npm run build && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache"
+    startCommand: "vendor/bin/heroku-php-apache2 public/"
+    envVars:
+      - key: APP_NAME
+        value: LifeBlood
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: lifeblood-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: lifeblood-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: lifeblood-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: lifeblood-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: lifeblood-db
+          property: password
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: MAIL_MAILER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+
+  # 2. Background Queue Worker Service
+  - type: worker
+    name: lifeblood-worker
+    env: php
+    plan: starter
+    buildCommand: "composer install --no-dev --optimize-autoloader"
+    startCommand: "php artisan queue:work --tries=3 --backoff=10,30,60"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: lifeblood-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: lifeblood-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: lifeblood-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: lifeblood-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: lifeblood-db
+          property: password
+      - key: QUEUE_CONNECTION
+        value: database
+
+  # 3. Scheduled Cron Service
+  - type: cron
+    name: lifeblood-scheduler
+    env: php
+    plan: starter
+    schedule: "* * * * *"
+    buildCommand: "composer install --no-dev --optimize-autoloader"
+    startCommand: "php artisan schedule:run"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: lifeblood-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: lifeblood-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: lifeblood-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: lifeblood-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: lifeblood-db
+          property: password
+
+# 4. Managed PostgreSQL Database Instance
+databases:
+  - name: lifeblood-db
+    databaseName: lifeblood_prod
+    user: lifeblood_user
+    plan: starter
