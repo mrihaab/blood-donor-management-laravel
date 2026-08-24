@@ -8,6 +8,7 @@ use App\Models\BloodGroup;
 use App\Models\BloodRequest;
 use App\Models\Appointment;
 use App\Models\Donation;
+use App\Services\DonorEligibilityService;
 
 class DashboardController extends Controller
 {
@@ -39,6 +40,12 @@ class DashboardController extends Controller
         // Get donor's stats strictly from DB
         $totalDonations = Donation::where('donor_id', optional($donor)->id)->count();
         $latestDonation = Donation::where('donor_id', optional($donor)->id)->latest()->first();
+        
+        $upcomingAppointment = Appointment::where('donor_id', optional($donor)->id)
+            ->where('appointment_date', '>=', now())
+            ->where('status', 'scheduled')
+            ->first();
+
         $upcomingAppointments = Appointment::where('donor_id', optional($donor)->id)
             ->where('appointment_date', '>=', now())
             ->where('status', 'scheduled')
@@ -54,15 +61,22 @@ class DashboardController extends Controller
             return $query->where('blood_group', $bloodGroupName);
         })->count();
 
-        // Single source of truth from Donor model methods
-        $nextEligibleDate = $donor->getNextEligibleDate()->format('Y-m-d');
-        $isEligible = $donor->isEligibleToDonate();
+        // Calculate eligibility array safely via DonorEligibilityService
+        $eligibilityService = app(DonorEligibilityService::class);
+        $eligibility = $eligibilityService->checkEligibility($donor);
+
+        $nextEligibleDate = isset($eligibility['next_eligible_date']) && $eligibility['next_eligible_date']
+            ? $eligibility['next_eligible_date']->format('Y-m-d')
+            : now()->format('Y-m-d');
+        $isEligible = $eligibility['eligible'] ?? true;
 
         return view('donor.dashboard', [
             'totalDonations' => $totalDonations,
             'latestDonation' => $latestDonation,
             'nextEligibleDate' => $nextEligibleDate,
             'isEligible' => $isEligible,
+            'eligibility' => $eligibility,
+            'upcomingAppointment' => $upcomingAppointment,
             'upcomingAppointments' => $upcomingAppointments,
             'recentAppointments' => $recentAppointments,
             'bloodRequests' => $bloodRequests,

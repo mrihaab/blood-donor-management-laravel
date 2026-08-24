@@ -17,13 +17,13 @@ defineProps({
             <Link
                 v-if="$page.props.auth && $page.props.auth.user"
                 :href="route('dashboard')"
-                class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500"
-            >Dashboard</Link>
+                class="font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500"
+            >Go to Dashboard &rarr;</Link>
             <template v-else>
                 <Link
                     :href="route('login')"
                     class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500"
-                >Log in</Link>
+                >Sign In</Link>
 
                 <Link
                     v-if="canRegister"
@@ -50,35 +50,43 @@ defineProps({
                     Streamlining Blood Donation & Inventory Management
                 </h1>
                 <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">
-                    A comprehensive platform connecting blood donors, healthcare providers, and administrators to ensure lifesaving blood availability.
+                    A comprehensive healthcare platform connecting blood donors, hospitals, and blood bank administrators to save lives.
                 </p>
                 <div class="mt-8 flex justify-center gap-4">
-                    <Link
-                        :href="route('register')"
-                        class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-150"
-                    >Become a Donor</Link>
-                    <Link
-                        :href="route('login')"
-                        class="px-6 py-3 bg-white text-gray-800 font-medium rounded-lg shadow border border-gray-300 hover:bg-gray-50 transition duration-150"
-                    >Sign In</Link>
+                    <template v-if="$page.props.auth && $page.props.auth.user">
+                        <Link
+                            :href="route('dashboard')"
+                            class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-150"
+                        >Go to My Dashboard &rarr;</Link>
+                    </template>
+                    <template v-else>
+                        <Link
+                            :href="route('register')"
+                            class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-150"
+                        >Become a Donor</Link>
+                        <Link
+                            :href="route('login')"
+                            class="px-6 py-3 bg-white text-gray-800 font-medium rounded-lg shadow border border-gray-300 hover:bg-gray-50 transition duration-150"
+                        >Sign In</Link>
+                    </template>
                 </div>
             </div>
 
             <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center font-bold text-xl mb-4">🩸</div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Donor Registration</h3>
-                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Register as a donor, track donation history, and schedule appointments effortlessly.</p>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Donor Portal</h3>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Register as a donor, track donation eligibility, and manage appointments.</p>
                 </div>
                 <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center font-bold text-xl mb-4">📊</div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Real-Time Inventory</h3>
-                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Monitor blood group stock levels with automated low-stock warnings.</p>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Hospital Requisitions</h3>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Isolated hospital portal for patient management and blood requisitions.</p>
                 </div>
                 <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center font-bold text-xl mb-4">🚨</div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Emergency Requests</h3>
-                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Submit emergency blood requests, assign available donors, and track dispatch status.</p>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Emergency Dispatch</h3>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Priority emergency blood requests with FEFO unit allocation and notifications.</p>
                 </div>
             </div>
         </div>
