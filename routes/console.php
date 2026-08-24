@@ -4,9 +4,9 @@ use App\Models\Donor;
 use App\Models\Appointment;
 use App\Services\BloodInventoryService;
 use App\Services\DonorDeferralService;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 // Existing inspire command
 Artisan::command('inspire', function () {
@@ -65,15 +65,11 @@ Artisan::command('donors:create-test-data', function () {
     $this->info("Created 10 test donor accounts with profiles.");
 })->purpose('Generate test donor data');
 
-// Scheduling Setup (for Laravel 11)
-Artisan::command('schedule:run-custom', function (Schedule $schedule) {
-    $schedule->command('donors:send-reminders')->weekly();
-    $schedule->command('donors:check-deferral-expiries')->daily();
-    $schedule->command('inventory:check-expiry')->daily();
-    $schedule->command('appointments:cleanup')->monthly();
-    
-    $this->info("Custom schedule commands registered.");
-})->purpose('Register custom scheduled commands');
+// Scheduling Registrations (Laravel 11 Schedule Facade)
+Schedule::command('donors:send-reminders')->weekly();
+Schedule::command('donors:check-deferral-expiries')->daily();
+Schedule::command('inventory:check-expiry')->daily();
+Schedule::command('appointments:cleanup')->monthly();
 
 // Helper to setup scheduler in production
 Artisan::command('donors:setup-scheduler', function () {
