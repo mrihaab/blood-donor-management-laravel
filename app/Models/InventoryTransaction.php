@@ -23,6 +23,17 @@ class InventoryTransaction extends Model
         'reason',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \LogicException('InventoryTransaction audit records are immutable and cannot be modified.');
+        });
+
+        static::deleting(function () {
+            throw new \LogicException('InventoryTransaction audit records are immutable and cannot be deleted.');
+        });
+    }
+
     public function bloodUnit()
     {
         return $this->belongsTo(BloodUnit::class);

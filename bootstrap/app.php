@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\Authenticate::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'donor' => \App\Http\Middleware\DonorMiddleware::class,
+            '2fa'   => \App\Http\Middleware\EnforceTwoFactor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

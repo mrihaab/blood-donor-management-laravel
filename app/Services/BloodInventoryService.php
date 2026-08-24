@@ -101,7 +101,7 @@ class BloodInventoryService
     }
 
     /**
-     * Process expired units and update status & log audit transactions.
+     * Process expired physical BloodUnit records and update status & log audit transactions.
      * Idempotent operation.
      */
     public function processExpiredUnits(): int
@@ -135,5 +135,13 @@ class BloodInventoryService
 
             return $count;
         });
+    }
+
+    /**
+     * Alias for processExpiredUnits to satisfy domain service contract.
+     */
+    public function processExpiries(): int
+    {
+        return $this->processExpiredUnits();
     }
 }

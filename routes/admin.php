@@ -13,9 +13,10 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\HospitalAdminController;
 use App\Http\Controllers\Admin\PatientAdminController;
 use App\Http\Controllers\Admin\TransfusionAdminController;
+use App\Http\Controllers\Admin\TwoFactorAuthController;
 use App\Http\Controllers\NotificationCenterController;
 
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin', '2fa'])->group(function () {
     // Admin Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
@@ -36,9 +37,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::post('/notifications-feed/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.read_all');
 
     // Two-Factor Authentication Management
-    Route::get('/two-factor', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'show'])->name('2fa.show');
-    Route::post('/two-factor/enable', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'enable'])->name('2fa.enable');
-    Route::post('/two-factor/disable', [\App\Http\Controllers\Admin\TwoFactorAuthController::class, 'disable'])->name('2fa.disable');
+    Route::get('/two-factor', [TwoFactorAuthController::class, 'show'])->name('2fa.show');
+    Route::post('/two-factor/enable', [TwoFactorAuthController::class, 'enable'])->name('2fa.enable');
+    Route::post('/two-factor/verify', [TwoFactorAuthController::class, 'verify'])->name('2fa.verify');
+    Route::post('/two-factor/disable', [TwoFactorAuthController::class, 'disable'])->name('2fa.disable');
 
     // Donor Management
     Route::resource('donors', DonorController::class);

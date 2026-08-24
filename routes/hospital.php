@@ -18,25 +18,25 @@ Route::middleware(['auth', 'verified'])->prefix('hospital')->name('hospital.')->
     // Patients Management
     Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
     Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
-    Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+    Route::post('/patients', [PatientController::class, 'store'])->middleware('throttle:60,1')->name('patients.store');
     Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
     Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
-    Route::put('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
+    Route::put('/patients/{patient}', [PatientController::class, 'update'])->middleware('throttle:60,1')->name('patients.update');
 
     // Requisitions Management
     Route::get('/requests', [BloodRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [BloodRequestController::class, 'create'])->name('requests.create');
-    Route::post('/requests', [BloodRequestController::class, 'store'])->name('requests.store');
+    Route::post('/requests', [BloodRequestController::class, 'store'])->middleware('throttle:60,1')->name('requests.store');
     Route::get('/requests/{request}', [BloodRequestController::class, 'show'])->name('requests.show');
 
     // Clinical Transfusions Management
     Route::get('/transfusions', [TransfusionController::class, 'index'])->name('transfusions.index');
     Route::get('/transfusions/create', [TransfusionController::class, 'create'])->name('transfusions.create');
-    Route::post('/transfusions', [TransfusionController::class, 'store'])->name('transfusions.store');
+    Route::post('/transfusions', [TransfusionController::class, 'store'])->middleware('throttle:60,1')->name('transfusions.store');
     Route::get('/transfusions/{transfusion}', [TransfusionController::class, 'show'])->name('transfusions.show');
-    Route::post('/transfusions/{transfusion}/issue', [TransfusionController::class, 'issue'])->name('transfusions.issue');
-    Route::post('/transfusions/{transfusion}/start', [TransfusionController::class, 'start'])->name('transfusions.start');
-    Route::post('/transfusions/{transfusion}/complete', [TransfusionController::class, 'complete'])->name('transfusions.complete');
-    Route::post('/transfusions/{transfusion}/stop', [TransfusionController::class, 'stop'])->name('transfusions.stop');
-    Route::post('/transfusions/{transfusion}/reaction', [TransfusionController::class, 'recordReaction'])->name('transfusions.reaction');
+    Route::post('/transfusions/{transfusion}/issue', [TransfusionController::class, 'issue'])->middleware('throttle:60,1')->name('transfusions.issue');
+    Route::post('/transfusions/{transfusion}/start', [TransfusionController::class, 'start'])->middleware('throttle:60,1')->name('transfusions.start');
+    Route::post('/transfusions/{transfusion}/complete', [TransfusionController::class, 'complete'])->middleware('throttle:60,1')->name('transfusions.complete');
+    Route::post('/transfusions/{transfusion}/stop', [TransfusionController::class, 'stop'])->middleware('throttle:60,1')->name('transfusions.stop');
+    Route::post('/transfusions/{transfusion}/reaction', [TransfusionController::class, 'recordReaction'])->middleware('throttle:60,1')->name('transfusions.reaction');
 });

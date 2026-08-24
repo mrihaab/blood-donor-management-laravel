@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,5 +44,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(BloodRequest::class, BloodRequestPolicy::class);
         Gate::policy(Donation::class, DonationPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+
+        // Server-side audit log immutability protection
+        Activity::updating(function () {
+            throw new \LogicException('Activity log records are immutable and cannot be modified.');
+        });
+
+        Activity::deleting(function () {
+            throw new \LogicException('Activity log records are immutable and cannot be deleted.');
+        });
     }
 }

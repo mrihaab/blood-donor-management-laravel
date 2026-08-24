@@ -12,6 +12,9 @@ class EmergencyBloodRequestNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
+    public $tries = 3;
+    public $backoff = [10, 30, 60];
+
     public $bloodRequest;
 
     public function __construct(BloodRequest $bloodRequest)

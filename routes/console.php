@@ -2,7 +2,7 @@
 
 use App\Models\Donor;
 use App\Models\Appointment;
-use App\Models\BloodInventory;
+use App\Services\BloodInventoryService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -25,21 +25,18 @@ Artisan::command('donors:send-reminders', function () {
     $count = $eligibleDonors->count();
     
     $eligibleDonors->each(function ($donor) {
-        // In production, implement actual notification logic here
         $this->info("Would send reminder to: {$donor->user->email}");
-        // Example: $donor->user->notify(new DonationReminder());
     });
 
     $this->info("{$count} donors eligible for reminders.");
 })->purpose('Send reminders to eligible blood donors');
 
 Artisan::command('inventory:check-expiry', function () {
-    $expired = BloodInventory::where('expiry_date', '<', now())
-        ->where('status', '!=', 'expired')
-        ->update(['status' => 'expired']);
+    $inventoryService = app(BloodInventoryService::class);
+    $expired = $inventoryService->processExpiries();
 
-    $this->info("Marked {$expired} blood units as expired.");
-})->purpose('Check and mark expired blood inventory');
+    $this->info("Marked {$expired} physical blood unit(s) as expired.");
+})->purpose('Check and mark expired physical blood units using BloodInventoryService');
 
 Artisan::command('appointments:cleanup', function () {
     $threshold = now()->subYear();
@@ -71,5 +68,5 @@ Artisan::command('schedule:run-custom', function (Schedule $schedule) {
 // Helper to setup scheduler in production
 Artisan::command('donors:setup-scheduler', function () {
     $this->info("Add this to your server's cron tab:");
-    $this->comment("* * * * * cd /path-to-your-project && php artisan schedule:run-custom >> /dev/null 2>&1");
+    $this->comment("* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1");
 })->purpose('Get instructions for setting up scheduled tasks');

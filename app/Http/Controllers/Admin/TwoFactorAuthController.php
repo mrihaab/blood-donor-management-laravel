@@ -58,12 +58,31 @@ class TwoFactorAuthController extends Controller
         $user->two_factor_recovery_codes = json_encode($recoveryCodes);
         $user->save();
 
+        session(['2fa_verified' => true]);
+
         activity()
             ->causedBy($user)
             ->performedOn($user)
             ->log('Admin enabled Two-Factor Authentication (2FA)');
 
         return back()->with('success', 'Two-Factor Authentication has been successfully enabled.');
+    }
+
+    public function verify(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $user = $request->user();
+        $google2fa = new Google2FA();
+
+        if ($google2fa->verifyKey($user->google2fa_secret, $request->code, 8)) {
+            session(['2fa_verified' => true]);
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return back()->withErrors(['code' => 'Invalid authentication code.']);
     }
 
     public function disable(Request $request)
@@ -73,6 +92,8 @@ class TwoFactorAuthController extends Controller
         $user->google2fa_secret = null;
         $user->two_factor_recovery_codes = null;
         $user->save();
+
+        session()->forget('2fa_verified');
 
         activity()
             ->causedBy($user)
