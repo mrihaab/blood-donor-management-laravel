@@ -42,7 +42,9 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => 'active',
+            'email_verified_at' => now(),
         ]);
+        $user->email_verified_at = now();
         $user->role = 'donor';
         $user->save();
 
@@ -81,6 +83,6 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('donor.dashboard');
+        return Inertia::location(route('donor.dashboard'));
     }
 }
