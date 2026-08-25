@@ -45,12 +45,20 @@ class RegisteredUserController extends Controller
         $user->role = 'donor';
         $user->save();
 
-        // Create associated Donor profile record
-        $bloodGroup = BloodGroup::first() ?? BloodGroup::firstOrCreate(
-            ['name' => 'A+'],
-            ['description' => 'A positive']
-        );
+        // Ensure default blood groups exist if DB unseeded
+        if (BloodGroup::count() === 0) {
+            $bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+            foreach ($bloodGroups as $group) {
+                BloodGroup::firstOrCreate(
+                    ['name' => $group],
+                    ['description' => $group . ' blood group']
+                );
+            }
+        }
 
+        $bloodGroup = BloodGroup::first();
+
+        // Create associated Donor profile record
         $user->donor()->create([
             'blood_group_id' => $bloodGroup->id,
             'contact_number' => 'Not Provided',
@@ -61,12 +69,13 @@ class RegisteredUserController extends Controller
             'gender' => 'other',
             'date_of_birth' => '2000-01-01',
             'is_available' => true,
+            'status' => 'active',
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return Inertia::location(route('donor.dashboard'));
+        return redirect()->route('donor.dashboard');
     }
 }
