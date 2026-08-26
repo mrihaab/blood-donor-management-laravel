@@ -4,7 +4,7 @@ services:
     name: lifeblood-web
     env: php
     plan: starter
-    buildCommand: "composer install --no-dev --optimize-autoloader && npm install && npm run build && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache"
+    buildCommand: "composer install --no-dev --optimize-autoloader && npm install && npm run build && php artisan config:clear && php artisan view:clear && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache"
     startCommand: "vendor/bin/heroku-php-apache2 public/"
     envVars:
       - key: APP_NAME

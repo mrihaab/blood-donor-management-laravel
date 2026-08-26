@@ -65,6 +65,7 @@ class DonorEligibilityService
             'active_deferral' => $activeDeferral,
             'days_since_last' => $daysSince,
             'days_until_eligible' => $daysUntil,
+            'days_remaining' => $daysUntil,
             'last_donation_date' => $lastDonationDate,
             'next_eligible_date' => $nextEligibleDate,
         ];

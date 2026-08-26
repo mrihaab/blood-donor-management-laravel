@@ -22,7 +22,7 @@
         <!-- Medical Eligibility Status -->
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">56-Day Donation Guard</span>
-            @if($eligibility['eligible'])
+            @if($eligibility['eligible'] ?? true)
                 <div class="flex items-center space-x-2">
                     <span class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-lg font-bold text-emerald-700">Eligible to Donate Today!</span>
@@ -31,16 +31,16 @@
             @else
                 <div class="flex items-center space-x-2">
                     <span class="h-3 w-3 rounded-full bg-amber-500"></span>
-                    <span class="text-lg font-bold text-amber-700">Deferred Until {{ $eligibility['next_eligible_date']->format('M d, Y') }}</span>
+                    <span class="text-lg font-bold text-amber-700">Deferred Until {{ isset($eligibility['next_eligible_date']) && $eligibility['next_eligible_date'] ? $eligibility['next_eligible_date']->format('M d, Y') : 'specified date' }}</span>
                 </div>
-                <p class="text-xs text-slate-500">Please wait {{ $eligibility['days_remaining'] }} more days before your next donation.</p>
+                <p class="text-xs text-slate-500">Please wait {{ $eligibility['days_remaining'] ?? $eligibility['days_until_eligible'] ?? 0 }} more days before your next donation.</p>
             @endif
         </div>
 
         <!-- Last Donation -->
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Last Donation Date</span>
-            <h3 class="text-2xl font-bold text-slate-900">{{ auth()->user()->donor->last_donation_date ?? 'No prior record' }}</h3>
+            <h3 class="text-2xl font-bold text-slate-900">{{ auth()->user()->donor && auth()->user()->donor->last_donation_date ? auth()->user()->donor->last_donation_date->format('M d, Y') : 'No prior record' }}</h3>
             <p class="text-xs text-slate-500">Recorded in LifeBlood platform</p>
         </div>
 
