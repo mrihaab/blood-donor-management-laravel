@@ -67,7 +67,7 @@
             <p class="mt-2 text-xs text-slate-500">Schedule a visit at a convenient blood collection center.</p>
         </a>
 
-        <a href="{{ route('donor.blood-requests.create') }}" class="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm hover:border-red-500 hover:shadow-md transition">
+        <a href="{{ route('donor.blood_requests.create') }}" class="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm hover:border-red-500 hover:shadow-md transition">
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-bold text-slate-900 group-hover:text-red-600 transition">Request Emergency Blood</h3>
                 <span class="text-slate-400 group-hover:text-red-600 font-bold">&rarr;</span>
