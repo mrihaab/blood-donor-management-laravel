@@ -23,7 +23,10 @@ class BloodRequestController extends Controller
             ->latest()
             ->get();
 
-        return view('donor.blood-requests.index', compact('bloodRequests'));
+        return view('donor.blood-requests.index', [
+            'requests' => $bloodRequests,
+            'bloodRequests' => $bloodRequests,
+        ]);
     }
 
     public function create()

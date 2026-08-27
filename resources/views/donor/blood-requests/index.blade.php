@@ -26,7 +26,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($requests as $req)
+                    @forelse(($requests ?? $bloodRequests ?? []) as $req)
                         <tr class="hover:bg-gray-50/50">
                             <td class="px-4 py-3 font-semibold text-gray-900">{{ $req->patient_name ?? $req->requester_name ?? 'N/A' }}</td>
                             <td class="px-4 py-3">
