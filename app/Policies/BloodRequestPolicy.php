@@ -22,8 +22,10 @@ class BloodRequestPolicy
             return true;
         }
 
-        if ($user->isHospital() && $user->hospital_id && (int)$user->hospital_id === (int)$request->hospital_id) {
-            return true;
+        if ($user->isHospital() && $user->hospital_id) {
+            if ($request->hospital_id === null || (int)$user->hospital_id === (int)$request->hospital_id) {
+                return true;
+            }
         }
 
         return false;

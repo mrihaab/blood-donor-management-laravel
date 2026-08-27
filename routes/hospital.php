@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified'])->prefix('hospital')->name('hospital.')->
     Route::get('/requests', [BloodRequestController::class, 'index'])->name('requests.index');
     Route::get('/requests/create', [BloodRequestController::class, 'create'])->name('requests.create');
     Route::post('/requests', [BloodRequestController::class, 'store'])->middleware('throttle:60,1')->name('requests.store');
-    Route::get('/requests/{request}', [BloodRequestController::class, 'show'])->name('requests.show');
+    Route::get('/requests/{bloodRequest}', [BloodRequestController::class, 'show'])->name('requests.show');
 
     // Clinical Transfusions Management
     Route::get('/transfusions', [TransfusionController::class, 'index'])->name('transfusions.index');
