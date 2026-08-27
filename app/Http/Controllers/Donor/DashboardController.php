@@ -15,10 +15,10 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $donor = $user->donor;
+        $donor = $user ? $user->donor : null;
 
         // If donor profile doesn't exist unexpectedly, resolve blood group dynamically
-        if (!$donor) {
+        if ($user && !$donor) {
             $bloodGroup = BloodGroup::first() ?? BloodGroup::firstOrCreate(
                 ['name' => 'A+'],
                 ['description' => 'A positive']
@@ -28,12 +28,13 @@ class DashboardController extends Controller
                 'blood_group_id' => $bloodGroup->id,
                 'gender' => 'other',
                 'date_of_birth' => '2000-01-01',
-                'contact_number' => $user->email,
+                'contact_number' => $user->email ?? 'Not Provided',
                 'address' => 'Please update your address',
                 'city' => 'Unknown',
                 'state' => 'Unknown',
                 'zip_code' => '00000',
                 'is_available' => true,
+                'status' => 'active',
             ]);
         }
 
@@ -56,14 +57,25 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $bloodGroupName = optional($donor->bloodGroup)->name ?? 'Not Set';
+        $bloodGroupName = optional(optional($donor)->bloodGroup)->name ?? 'Not Set';
         $bloodRequests = BloodRequest::when($bloodGroupName !== 'Not Set', function($query) use ($bloodGroupName) {
             return $query->where('blood_group', $bloodGroupName);
         })->count();
 
         // Calculate eligibility array safely via DonorEligibilityService
         $eligibilityService = app(DonorEligibilityService::class);
-        $eligibility = $eligibilityService->checkEligibility($donor);
+        $eligibility = $donor ? $eligibilityService->checkEligibility($donor) : [
+            'eligible' => true,
+            'reasons' => [],
+            'is_deferred' => false,
+            'deferral_type' => null,
+            'active_deferral' => null,
+            'days_since_last' => null,
+            'days_until_eligible' => 0,
+            'days_remaining' => 0,
+            'last_donation_date' => null,
+            'next_eligible_date' => now(),
+        ];
 
         $nextEligibleDate = isset($eligibility['next_eligible_date']) && $eligibility['next_eligible_date']
             ? $eligibility['next_eligible_date']->format('Y-m-d')
@@ -88,7 +100,7 @@ class DashboardController extends Controller
     public function history()
     {
         $user = auth()->user();
-        $donor = $user->donor;
+        $donor = $user ? $user->donor : null;
         
         if (!$donor) {
             return redirect()->route('donor.dashboard')->with('error', 'Please complete your donor profile first.');
