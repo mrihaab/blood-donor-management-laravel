@@ -64,6 +64,16 @@ class BloodRequest extends Model
         return $this->belongsTo(Patient::class);
     }
 
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejecter()
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     public function getBloodGroupAttribute($value)
     {
         return $value;
