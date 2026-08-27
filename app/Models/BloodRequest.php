@@ -49,6 +49,11 @@ class BloodRequest extends Model
         return $this->belongsTo(Donor::class);
     }
 
+    public function hospital()
+    {
+        return $this->belongsTo(Hospital::class, 'hospital_id');
+    }
+
     public function hospitalEntity()
     {
         return $this->belongsTo(Hospital::class, 'hospital_id');

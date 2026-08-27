@@ -25,7 +25,9 @@
                 </div>
                 <div>
                     <span class="text-xs text-gray-500 block">Hospital</span>
-                    <span class="font-semibold text-gray-900">{{ $bloodRequest->hospital->name ?? $bloodRequest->hospital }}</span>
+                    <span class="font-semibold text-gray-900">
+                        {{ is_object($bloodRequest->hospital) ? $bloodRequest->hospital->name : (is_string($bloodRequest->hospital) ? $bloodRequest->hospital : ($bloodRequest->hospitalEntity->name ?? 'N/A')) }}
+                    </span>
                 </div>
                 <div>
                     <span class="text-xs text-gray-500 block">Blood Group Requested</span>
