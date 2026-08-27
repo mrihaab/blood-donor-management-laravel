@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Hospital;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -12,7 +13,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::with('hospital');
 
         // Apply filters
         if ($request->filled('role')) {
@@ -31,8 +32,9 @@ class UserController extends Controller
         }
 
         $users = $query->latest()->paginate(15);
+        $hospitals = Hospital::where('status', 'active')->get();
 
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index', compact('users', 'hospitals'));
     }
 
     public function store(Request $request)
@@ -41,7 +43,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,donor',
+            'role' => 'required|in:admin,donor,hospital',
+            'hospital_id' => 'nullable|required_if:role,hospital|exists:hospitals,id',
             'status' => 'required|in:active,inactive,blocked'
         ]);
 
@@ -50,6 +53,7 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => $request->status,
+            'hospital_id' => $request->role === 'hospital' ? $request->hospital_id : null,
             'email_verified_at' => now(),
         ]);
         $user->role = $request->role;
@@ -71,7 +75,8 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'role' => 'required|in:admin,donor',
+            'role' => 'required|in:admin,donor,hospital',
+            'hospital_id' => 'nullable|required_if:role,hospital|exists:hospitals,id',
             'status' => 'required|in:active,inactive,blocked',
             'password' => 'nullable|string|min:8|confirmed'
         ]);
@@ -83,6 +88,10 @@ class UserController extends Controller
         // Prevent changing master admin role
         if ($user->email !== $masterAdminEmail) {
             $user->role = $request->role;
+        }
+
+        if ($request->role === 'hospital') {
+            $user->hospital_id = $request->hospital_id;
         }
 
         if ($request->filled('password')) {

@@ -21,6 +21,11 @@ class HospitalPolicy
         return $user->isHospital() && (int)$user->hospital_id === (int)$hospital->id;
     }
 
+    public function create(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
     public function update(User $user, Hospital $hospital): bool
     {
         return $user->isAdmin();

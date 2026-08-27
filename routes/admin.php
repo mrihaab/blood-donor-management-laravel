@@ -48,7 +48,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin',
 
     // Hospital & Patient Entities
     Route::get('/hospitals', [HospitalAdminController::class, 'index'])->name('hospitals.index');
+    Route::get('/hospitals/create', [HospitalAdminController::class, 'create'])->name('hospitals.create');
+    Route::post('/hospitals', [HospitalAdminController::class, 'store'])->name('hospitals.store');
     Route::get('/hospitals/{hospital}', [HospitalAdminController::class, 'show'])->name('hospitals.show');
+    Route::get('/hospitals/{hospital}/edit', [HospitalAdminController::class, 'edit'])->name('hospitals.edit');
+    Route::put('/hospitals/{hospital}', [HospitalAdminController::class, 'update'])->name('hospitals.update');
     Route::get('/patients', [PatientAdminController::class, 'index'])->name('patients.index');
     Route::get('/patients/{patient}', [PatientAdminController::class, 'show'])->name('patients.show');
     

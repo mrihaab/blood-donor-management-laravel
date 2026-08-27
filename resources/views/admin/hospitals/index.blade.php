@@ -7,6 +7,10 @@
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Hospital Organizations Directory</h1>
             <p class="text-sm text-slate-500">Registered hospital institutions, licensing credentials, and blood request history.</p>
         </div>
+        <a href="{{ route('admin.hospitals.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm transition">
+            <span>🏥</span>
+            <span>+ Register New Hospital</span>
+        </a>
     </div>
 
     <!-- Search Bar -->
@@ -26,6 +30,7 @@
                     <th class="px-6 py-3.5">License Number</th>
                     <th class="px-6 py-3.5">City</th>
                     <th class="px-6 py-3.5">Contact Phone</th>
+                    <th class="px-6 py-3.5">Staff Users</th>
                     <th class="px-6 py-3.5">Patients</th>
                     <th class="px-6 py-3.5">Total Requisitions</th>
                     <th class="px-6 py-3.5 text-right">Actions</th>
@@ -38,18 +43,22 @@
                         <td class="px-6 py-4 font-mono text-slate-600">{{ $hospital->license_number ?? 'LIC-REG-99' }}</td>
                         <td class="px-6 py-4 text-slate-600">{{ $hospital->city }}</td>
                         <td class="px-6 py-4 text-slate-600">{{ $hospital->contact_phone }}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900">{{ $hospital->users_count ?? 1 }}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">{{ $hospital->patients_count }}</td>
                         <td class="px-6 py-4 font-bold text-slate-900">{{ $hospital->blood_requests_count }}</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right space-x-2">
                             <a href="{{ route('admin.hospitals.show', $hospital) }}" class="inline-flex items-center rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 View Profile
+                            </a>
+                            <a href="{{ route('admin.hospitals.edit', $hospital) }}" class="inline-flex items-center rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+                                Edit
                             </a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="p-8">
-                            <x-empty-state title="No registered hospitals found" description="Hospital records will appear here as requisitions are processed." />
+                        <td colspan="8" class="p-8">
+                            <x-empty-state title="No registered hospitals found" description="Hospital records will appear here once registered by admin." />
                         </td>
                     </tr>
                 @endforelse
