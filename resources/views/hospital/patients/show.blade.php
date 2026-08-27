@@ -25,7 +25,9 @@
                 </div>
                 <div>
                     <span class="text-xs text-gray-500 block">Date of Birth</span>
-                    <span class="font-semibold text-gray-900">{{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : 'N/A' }}</span>
+                    <span class="font-semibold text-gray-900">
+                        {{ is_object($patient->date_of_birth) ? $patient->date_of_birth->format('M d, Y') : ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'N/A') }}
+                    </span>
                 </div>
                 <div>
                     <span class="text-xs text-gray-500 block">Blood Group</span>

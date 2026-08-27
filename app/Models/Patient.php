@@ -20,6 +20,10 @@ class Patient extends Model
         'status',
     ];
 
+    protected $casts = [
+        'date_of_birth' => 'date',
+    ];
+
     public function hospital()
     {
         return $this->belongsTo(Hospital::class);

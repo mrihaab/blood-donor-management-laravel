@@ -38,7 +38,9 @@
                             <td class="px-4 py-3 font-bold text-gray-900">{{ $patient->mrn }}</td>
                             <td class="px-4 py-3 font-semibold text-gray-900">{{ $patient->name }}</td>
                             <td class="px-4 py-3 capitalize">{{ $patient->gender }}</td>
-                            <td class="px-4 py-3">{{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : 'N/A' }}</td>
+                            <td class="px-4 py-3">
+                                {{ is_object($patient->date_of_birth) ? $patient->date_of_birth->format('M d, Y') : ($patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'N/A') }}
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="px-2.5 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-md">
                                     {{ $patient->bloodGroup->name ?? 'Unknown' }}
