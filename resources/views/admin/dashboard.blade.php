@@ -18,6 +18,66 @@
         </div>
     </div>
 
+    <!-- Active Flashing Emergency Command Banner -->
+    @if(isset($activeEmergencyRequests) && $activeEmergencyRequests->count() > 0)
+        <div class="rounded-2xl border-2 border-red-600 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 p-6 text-white shadow-xl space-y-4">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-red-500/60 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white text-xl animate-bounce">
+                        🚨
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black tracking-wide uppercase">ACTIVE CRITICAL EMERGENCY REQUISITIONS ({{ $activeEmergencyRequests->count() }})</h3>
+                        <p class="text-xs text-red-100 font-medium">Urgent clinical requisitions requiring immediate central bank dispense or donor broadcast dispatch.</p>
+                    </div>
+                </div>
+                <a href="{{ route('admin.emergency_requests.index') }}" class="inline-flex items-center px-4 py-2 bg-white text-red-700 font-bold text-xs rounded-xl shadow hover:bg-red-50 transition">
+                    Open Emergency Control Room &rarr;
+                </a>
+            </div>
+
+            <div class="divide-y divide-red-500/40">
+                @foreach($activeEmergencyRequests as $req)
+                    <div class="py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-sm">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-black text-white bg-black/30 px-2 py-0.5 rounded text-xs">#REQ-{{ $req->id }}</span>
+                                <span class="font-bold text-yellow-300 text-base">{{ $req->hospital ?? 'Hospital' }} ({{ $req->city ?? 'Metropolis' }})</span>
+                                <span class="text-xs font-black bg-white text-red-700 px-2 py-0.5 rounded-full">{{ $req->units_needed }} Unit(s) of {{ $req->bloodGroup->name ?? 'N/A' }}</span>
+                            </div>
+                            <p class="text-xs text-red-100">Patient: {{ $req->patient_name ?? 'N/A' }} | Required for: {{ $req->reason ?? 'Emergency Medical Requisition' }}</p>
+                        </div>
+
+                        <div class="flex items-center space-x-3">
+                            @if($req->has_enough_stock)
+                                <span class="text-xs font-bold bg-emerald-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 shadow">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Bank Stock Available ({{ $req->matching_stock_count }} Units)
+                                </span>
+                                <form method="POST" action="{{ route('admin.blood_requests.instant_dispense', $req->id) }}">
+                                    @csrf
+                                    <button type="submit" class="px-4 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold text-xs rounded-lg shadow transition">
+                                        ⚡ 1-Click Instant Dispense
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-xs font-bold bg-amber-400 text-slate-950 px-3 py-1.5 rounded-lg flex items-center gap-1 shadow">
+                                    ⚠️ Stock Depleted ({{ $req->matching_stock_count }} Units)
+                                </span>
+                                <form method="POST" action="{{ route('admin.blood_requests.notify_donors', $req->id) }}">
+                                    @csrf
+                                    <button type="submit" class="px-4 py-1.5 bg-yellow-300 hover:bg-yellow-200 text-slate-950 font-extrabold text-xs rounded-lg shadow transition">
+                                        📲 Dispatch Emergency Donors (City Match)
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- Top Operational KPI Cards -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <x-stat-card title="Available Blood Units" value="{{ $totalAvailableUnits }}" icon="droplet" color="red" subtext="Derived from active BloodUnit bags" />

@@ -31,12 +31,12 @@ class BloodRequestAdminController extends Controller
 
     public function index()
     {
-        $requests = BloodRequest::with(['user', 'approver'])
+        $requests = BloodRequest::with(['user', 'approver', 'hospitalEntity', 'bloodGroup'])
             ->latest()
             ->paginate(15);
 
         $bloodRequests = $requests;
-            
+
         return view('admin.blood-requests.index', compact('requests', 'bloodRequests'));
     }
 
@@ -49,6 +49,23 @@ class BloodRequestAdminController extends Controller
             return back()->with('success', 'Blood request approved successfully and stock allocated via FEFO.');
         } catch (\Throwable $e) {
             return back()->with('error', 'Unable to approve requisition: ' . $e->getMessage());
+        }
+    }
+
+    public function instantDispense($id)
+    {
+        $bloodRequest = BloodRequest::findOrFail($id);
+
+        try {
+            if ($bloodRequest->status === 'pending') {
+                $this->bloodRequestService->approveRequest($bloodRequest, auth()->user(), 'Instant 1-Click Bank Inventory Dispense');
+            }
+
+            $this->bloodRequestService->dispenseRequest($bloodRequest, auth()->user());
+
+            return back()->with('success', "⚡ INSTANT DISPENSE SUCCESSFUL! Stock units auto-allocated via FEFO and issued directly to {$bloodRequest->hospital} without disturbing donors.");
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to execute instant dispense: ' . $e->getMessage());
         }
     }
 

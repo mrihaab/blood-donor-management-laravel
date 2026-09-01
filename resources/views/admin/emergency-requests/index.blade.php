@@ -114,28 +114,31 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right space-x-2">
-                                <form method="POST" action="{{ route('admin.blood_requests.notify_donors', $req->id) }}" class="inline">
-                                     @csrf
-                                     <button type="submit" title="Dispatch In-App, Emergency Email, and WhatsApp/SMS alerts to eligible donors" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded transition inline-flex items-center gap-1">
-                                         📲 Broadcast Alert (App + Email + WhatsApp)
-                                     </button>
-                                 </form>
-
-                                 @if($req->status === 'pending')
-                                     <form method="POST" action="{{ route('admin.blood_requests.approve', $req->id) }}" class="inline">
-                                         @csrf
-                                         <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition">
-                                             Approve & FEFO Allocate
-                                         </button>
-                                     </form>
-                                 @elseif($req->status === 'approved')
-                                     <form method="POST" action="{{ route('admin.blood_requests.dispense', $req->id) }}" class="inline">
-                                         @csrf
-                                         <button type="submit" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition">
-                                             Dispense Stock
-                                         </button>
-                                     </form>
-                                 @endif
+                                @if($req->status === 'dispensed')
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded">✓ Issued & Dispensed</span>
+                                @elseif($req->has_enough_stock)
+                                    <form method="POST" action="{{ route('admin.blood_requests.instant_dispense', $req->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" title="Direct Instant Dispense from central inventory stock (No donors disturbed)" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded shadow transition inline-flex items-center gap-1">
+                                            ⚡ 1-Click Instant Dispense (Stock Available: {{ $req->matching_stock_count }})
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.blood_requests.notify_donors', $req->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" title="Stock Depleted: Dispatch alerts to matching city donors with 56-day cooldown" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded shadow transition inline-flex items-center gap-1">
+                                            📲 Dispatch Emergency Donors (City Match)
+                                        </button>
+                                    </form>
+                                    @if($req->status === 'pending')
+                                        <form method="POST" action="{{ route('admin.blood_requests.approve', $req->id) }}" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition">
+                                                Approve
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
                             </td>
                         </tr>
                     @empty

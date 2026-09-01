@@ -79,6 +79,7 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     // Blood Requests Management
     Route::get('/blood-requests', [BloodRequestAdminController::class, 'index'])->name('blood_requests.index');
     Route::post('/blood-requests/{id}/approve', [BloodRequestAdminController::class, 'approve'])->name('blood_requests.approve');
+    Route::post('/blood-requests/{id}/instant-dispense', [BloodRequestAdminController::class, 'instantDispense'])->name('blood_requests.instant_dispense');
     Route::post('/blood-requests/{id}/reject', [BloodRequestAdminController::class, 'reject'])->name('blood_requests.reject');
     Route::post('/blood-requests/{id}/assign-donor', [BloodRequestAdminController::class, 'assignDonor'])->name('blood_requests.assign_donor');
     Route::post('/blood-requests/{id}/notify-donors', [BloodRequestAdminController::class, 'notifyDonors'])->name('blood_requests.notify_donors');

@@ -133,6 +133,28 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
+        // Active Emergency Requisitions for Top Dashboard Command Banner
+        $activeEmergencyRequests = BloodRequest::with(['user', 'hospitalEntity'])
+            ->whereIn('status', ['pending', 'approved'])
+            ->where(function($q) {
+                $q->where('urgency', 'emergency')
+                  ->orWhere('urgency_level', 'emergency')
+                  ->orWhere('urgency_level', 'urgent');
+            })
+            ->latest()
+            ->get()
+            ->map(function($req) {
+                $bg = \App\Models\BloodGroup::where('name', $req->blood_group)->first();
+                $matchingStockCount = $bg ? \App\Models\BloodUnit::where('blood_group_id', $bg->id)
+                    ->where('status', 'available')
+                    ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                    ->count() : 0;
+
+                $req->matching_stock_count = $matchingStockCount;
+                $req->has_enough_stock = $matchingStockCount >= $req->units_needed;
+                return $req;
+            });
+
         return view('admin.dashboard', compact(
             'totalDonors',
             'activeDonors', 
@@ -150,19 +172,48 @@ class DashboardController extends Controller
             'bloodGroupStats',
             'recentActivities',
             'thisMonthStats',
-            'quickActions'
+            'quickActions',
+            'activeEmergencyRequests'
         ));
     }
 
-    public function emergencyRequests()
+    public function emergencyRequests(Request $request)
     {
-        $requests = BloodRequest::with(['user', 'approver'])
-            ->orderByRaw("CASE WHEN urgency_level = 'urgent' OR urgency_level = 'emergency' THEN 0 ELSE 1 END")
+        $query = BloodRequest::with(['user', 'approver', 'hospitalEntity']);
+
+        if ($request->filled('urgency')) {
+            $query->where('urgency_level', $request->input('urgency'));
+        }
+        if ($request->filled('blood_group')) {
+            $query->where('blood_group', $request->input('blood_group'));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        if ($request->filled('hospital_id')) {
+            $query->where('hospital_id', $request->input('hospital_id'));
+        }
+
+        $requests = $query->orderByRaw("CASE WHEN urgency_level = 'emergency' THEN 0 WHEN urgency_level = 'urgent' THEN 1 ELSE 2 END")
             ->latest()
             ->paginate(15);
 
-        $bloodRequests = $requests;
+        $requests->getCollection()->transform(function($req) {
+            $bg = \App\Models\BloodGroup::where('name', $req->blood_group)->first();
+            $matchingStockCount = $bg ? \App\Models\BloodUnit::where('blood_group_id', $bg->id)
+                ->where('status', 'available')
+                ->where('expiry_date', '>=', now()->format('Y-m-d'))
+                ->count() : 0;
 
-        return view('admin.blood-requests.index', compact('requests', 'bloodRequests'));
+            $req->matching_stock_count = $matchingStockCount;
+            $req->has_enough_stock = $matchingStockCount >= $req->units_needed;
+            return $req;
+        });
+
+        $bloodRequests = $requests;
+        $bloodGroups = \App\Models\BloodGroup::all();
+        $hospitals = \App\Models\Hospital::all();
+
+        return view('admin.emergency-requests.index', compact('requests', 'bloodRequests', 'bloodGroups', 'hospitals'));
     }
 }
