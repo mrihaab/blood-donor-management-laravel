@@ -63,6 +63,7 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     
     // Appointments Management
     Route::resource('appointments', AppointmentController::class);
+    Route::post('/appointments/{id}/intake', [AppointmentController::class, 'processIntake'])->name('appointments.intake');
     Route::post('/appointments/{id}/mark-completed', [AppointmentController::class, 'markCompleted'])->name('appointments.mark_completed');
     Route::post('/appointments/{id}/mark-cancelled', [AppointmentController::class, 'markCancelled'])->name('appointments.mark_cancelled');
     Route::post('/appointments/{id}/mark-no-show', [AppointmentController::class, 'markNoShow'])->name('appointments.mark_no_show');
