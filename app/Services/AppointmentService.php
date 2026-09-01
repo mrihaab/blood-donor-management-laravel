@@ -54,14 +54,14 @@ class AppointmentService
     public function transitionState(Appointment $appointment, string $targetStatus, ?User $actor = null): bool
     {
         $allowedTransitions = [
-            'scheduled' => ['checked_in', 'cancelled', 'no_show'],
-            'checked_in' => ['screening', 'cancelled'],
-            'screening' => ['donation_in_progress', 'deferred', 'cancelled'],
+            'scheduled'            => ['checked_in', 'screening', 'donation_in_progress', 'completed', 'cancelled', 'no_show'],
+            'checked_in'           => ['screening', 'donation_in_progress', 'completed', 'cancelled', 'no_show'],
+            'screening'            => ['donation_in_progress', 'completed', 'deferred', 'cancelled'],
             'donation_in_progress' => ['completed', 'cancelled'],
-            'completed' => [],
-            'cancelled' => [],
-            'no_show' => [],
-            'deferred' => [],
+            'completed'            => ['cancelled'],
+            'cancelled'            => ['scheduled'],
+            'no_show'              => ['scheduled'],
+            'deferred'             => ['scheduled'],
         ];
 
         $currentStatus = $appointment->status;

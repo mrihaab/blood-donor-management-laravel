@@ -55,21 +55,33 @@ class AppointmentController extends Controller
     public function markCompleted($id)
     {
         $appointment = Appointment::findOrFail($id);
-        $this->appointmentService->updateStatus($appointment, 'completed', auth()->user());
-        return back()->with('success', 'Appointment marked as completed.');
+        try {
+            $this->appointmentService->updateStatus($appointment, 'completed', auth()->user());
+            return back()->with('success', 'Appointment marked as completed successfully.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function markCancelled($id)
     {
         $appointment = Appointment::findOrFail($id);
-        $this->appointmentService->updateStatus($appointment, 'cancelled', auth()->user());
-        return back()->with('success', 'Appointment marked as cancelled.');
+        try {
+            $this->appointmentService->updateStatus($appointment, 'cancelled', auth()->user());
+            return back()->with('success', 'Appointment marked as cancelled successfully.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function markNoShow($id)
     {
         $appointment = Appointment::findOrFail($id);
-        $this->appointmentService->updateStatus($appointment, 'no_show', auth()->user());
-        return back()->with('success', 'Appointment marked as no show.');
+        try {
+            $this->appointmentService->updateStatus($appointment, 'no_show', auth()->user());
+            return back()->with('success', 'Appointment marked as no show.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }
