@@ -98,10 +98,11 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     
     // Analytics & Operational Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/donors', [ReportController::class, 'donorReport'])->name('reports.donors');
+    Route::get('/reports/donations', [ReportController::class, 'donationReport'])->name('reports.donations');
     Route::get('/reports/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
-    Route::get('/reports/donations', [ReportController::class, 'donationsReport'])->name('reports.donations');
-    Route::get('/reports/hospital-requests', [ReportController::class, 'hospitalRequestsReport'])->name('reports.hospital_requests');
-    Route::get('/reports/export', [ReportController::class, 'exportReport'])->name('reports.export');
+    Route::get('/reports/monthly-stats', [ReportController::class, 'monthlyStats'])->name('reports.monthly-stats');
+    Route::get('/reports/monthly_stats', [ReportController::class, 'monthlyStats'])->name('reports.monthly_stats');
     
     // Immutable Security & Activity Logs
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
