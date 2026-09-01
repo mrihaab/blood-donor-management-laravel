@@ -58,7 +58,7 @@
                             <td class="px-4 py-3">
                                 <x-status-badge :status="$app->status" />
                             </td>
-                            <td class="px-4 py-3 text-right space-x-1">
+                            <td class="px-4 py-3 text-right space-x-1.5">
                                 @if($app->status === 'scheduled')
                                     <a href="{{ route('admin.appointments.show', $app->id) }}" class="px-2.5 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition inline-block">
                                         🩸 Intake Blood
@@ -72,8 +72,16 @@
                                         <button type="submit" class="px-2 py-1 bg-slate-200 text-slate-700 text-xs font-semibold rounded hover:bg-slate-300">Cancel</button>
                                     </form>
                                 @else
-                                    <a href="{{ route('admin.appointments.show', $app->id) }}" class="text-blue-600 hover:underline text-xs">View Details</a>
+                                    <a href="{{ route('admin.appointments.show', $app->id) }}" class="text-blue-600 hover:underline text-xs font-medium">View Details</a>
                                 @endif
+
+                                <form method="POST" action="{{ route('admin.appointments.destroy', $app->id) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to delete appointment #{{ $app->id }}?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:underline text-xs font-bold ml-1">
+                                        Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty

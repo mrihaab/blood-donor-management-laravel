@@ -105,4 +105,18 @@ class AppointmentController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    public function destroy($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+        $appointmentId = $appointment->id;
+        $appointment->delete();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->log("Deleted appointment #{$appointmentId}");
+
+        return redirect()->route('admin.appointments.index')
+            ->with('success', "Appointment #{$appointmentId} deleted successfully.");
+    }
 }
