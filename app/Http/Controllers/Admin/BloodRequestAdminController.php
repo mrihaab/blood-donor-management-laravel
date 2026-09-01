@@ -43,34 +43,50 @@ class BloodRequestAdminController extends Controller
     public function approve(ApproveBloodRequest $request, $id)
     {
         $bloodRequest = BloodRequest::findOrFail($id);
-        $this->bloodRequestService->approveRequest($bloodRequest, auth()->user(), $request->input('admin_notes'));
 
-        return back()->with('success', 'Blood request approved successfully.');
+        try {
+            $this->bloodRequestService->approveRequest($bloodRequest, auth()->user(), $request->input('admin_notes'));
+            return back()->with('success', 'Blood request approved successfully and stock allocated via FEFO.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to approve requisition: ' . $e->getMessage());
+        }
     }
 
     public function reject(Request $request, $id)
     {
         $request->validate(['reason' => 'nullable|string|max:500']);
         $bloodRequest = BloodRequest::findOrFail($id);
-        $this->bloodRequestService->rejectRequest($bloodRequest, auth()->user(), $request->input('reason'));
-
-        return back()->with('success', 'Blood request rejected.');
+        
+        try {
+            $this->bloodRequestService->rejectRequest($bloodRequest, auth()->user(), $request->input('reason'));
+            return back()->with('success', 'Blood request rejected.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to reject requisition: ' . $e->getMessage());
+        }
     }
 
     public function fulfill(FulfillBloodRequest $request, $id)
     {
         $bloodRequest = BloodRequest::findOrFail($id);
-        $this->bloodRequestService->dispenseRequest($bloodRequest, auth()->user());
-
-        return back()->with('success', 'Blood request fulfilled.');
+        
+        try {
+            $this->bloodRequestService->dispenseRequest($bloodRequest, auth()->user());
+            return back()->with('success', 'Blood request fulfilled.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to fulfill requisition: ' . $e->getMessage());
+        }
     }
 
     public function dispenseBlood(Request $request, $id)
     {
         $bloodRequest = BloodRequest::findOrFail($id);
-        $this->bloodRequestService->dispenseRequest($bloodRequest, auth()->user());
-
-        return back()->with('success', 'Blood dispensed successfully for request.');
+        
+        try {
+            $this->bloodRequestService->dispenseRequest($bloodRequest, auth()->user());
+            return back()->with('success', 'Blood dispensed successfully for request.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Unable to dispense blood: ' . $e->getMessage());
+        }
     }
 
     public function destroy($id)

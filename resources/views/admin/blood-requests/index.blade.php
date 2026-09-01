@@ -13,8 +13,21 @@
     </div>
 
     @if (session('success'))
-        <div class="p-4 text-sm text-emerald-800 rounded-lg bg-emerald-50 border border-emerald-200">
-            <span class="font-bold">Success!</span> {{ session('success') }}
+        <div class="p-4 text-sm text-emerald-800 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+            <div>
+                <span class="font-bold">Success!</span> {{ session('success') }}
+            </div>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="p-4 text-sm text-rose-800 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-between shadow-sm">
+            <div>
+                <span class="font-bold">⚠️ Insufficient Stock Alert:</span> {{ session('error') }}
+            </div>
+            <a href="{{ route('admin.inventory.create') }}" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-md text-xs transition">
+                + Add Stock Now
+            </a>
         </div>
     @endif
 
