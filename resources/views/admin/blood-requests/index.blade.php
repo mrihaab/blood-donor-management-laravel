@@ -12,6 +12,12 @@
         </div>
     </div>
 
+    @if (session('success'))
+        <div class="p-4 text-sm text-emerald-800 rounded-lg bg-emerald-50 border border-emerald-200">
+            <span class="font-bold">Success!</span> {{ session('success') }}
+        </div>
+    @endif
+
     <!-- Requisitions Data Table -->
     <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
@@ -74,6 +80,14 @@
                             @else
                                 <span class="text-xs text-slate-400 font-semibold uppercase">Completed</span>
                             @endif
+
+                            <form method="POST" action="{{ route('admin.blood_requests.destroy', $req->id) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to delete blood requisition #REQ-{{ $req->id }}?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition">
+                                    Delete
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @empty

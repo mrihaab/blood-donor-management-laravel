@@ -134,4 +134,22 @@ class HospitalAdminController extends Controller
         return redirect()->route('admin.hospitals.index')
             ->with('success', "Hospital '{$hospital->name}' updated successfully!");
     }
+
+    public function destroy(Hospital $hospital)
+    {
+        $this->authorize('delete', $hospital);
+
+        $name = $hospital->name;
+        
+        // Delete related hospital staff users
+        User::where('hospital_id', $hospital->id)->delete();
+        $hospital->delete();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->log("Deleted hospital record for {$name}");
+
+        return redirect()->route('admin.hospitals.index')
+            ->with('success', "Hospital '{$name}' deleted successfully!");
+    }
 }

@@ -1,46 +1,50 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\DonorController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\BloodInventoryController;
 use App\Http\Controllers\Admin\BloodRequestAdminController;
-use App\Http\Controllers\Admin\EmergencyRequestAdminController;
-use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DonorController;
 use App\Http\Controllers\Admin\HospitalAdminController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\PatientAdminController;
-use App\Http\Controllers\Admin\TransfusionAdminController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TwoFactorAuthController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\NotificationCenterController;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin', '2fa'])->group(function () {
-    // Admin Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Admin Portal Routes
+|--------------------------------------------------------------------------
+|
+| Secured routes for Central Blood Bank Administrators. Includes 2FA
+| enforcement middleware for security-critical actions.
+|
+*/
+
+Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('admin.')->group(function () {
     
-    // Activity Audit Logs
-    Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
-
-    // Emergency Operations Queue
-    Route::get('/emergency-requests', [EmergencyRequestAdminController::class, 'index'])->name('emergency_requests.index');
-
-    // Transfusions Clinical Operations
-    Route::get('/transfusions', [TransfusionAdminController::class, 'index'])->name('transfusions.index');
-    Route::get('/transfusions/{transfusion}', [TransfusionAdminController::class, 'show'])->name('transfusions.show');
-    Route::post('/units/{unit}/certify-returned', [TransfusionAdminController::class, 'certifyReturnedUnit'])->name('units.certify_returned');
-
-    // User Notification Center
-    Route::get('/notifications-feed', [NotificationCenterController::class, 'index'])->name('notifications_feed.index');
-    Route::post('/notifications-feed/{notification}/read', [NotificationCenterController::class, 'markAsRead'])->name('notifications_feed.read');
-    Route::post('/notifications-feed/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.read_all');
+    // Dashboard & Overview
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/emergency-requests', [DashboardController::class, 'emergencyRequests'])->name('emergency_requests');
+    Route::get('/emergency-requests-index', [DashboardController::class, 'emergencyRequests'])->name('emergency_requests.index');
 
     // Two-Factor Authentication Management
-    Route::get('/two-factor', [TwoFactorAuthController::class, 'show'])->name('2fa.show');
-    Route::post('/two-factor/enable', [TwoFactorAuthController::class, 'enable'])->name('2fa.enable');
-    Route::post('/two-factor/verify', [TwoFactorAuthController::class, 'verify'])->name('2fa.verify');
-    Route::post('/two-factor/disable', [TwoFactorAuthController::class, 'disable'])->name('2fa.disable');
+    Route::get('/2fa', [TwoFactorAuthController::class, 'show'])->name('2fa.show');
+    Route::post('/2fa/enable', [TwoFactorAuthController::class, 'enable'])->name('2fa.enable');
+    Route::post('/2fa/disable', [TwoFactorAuthController::class, 'disable'])->name('2fa.disable');
+    Route::post('/2fa/confirm', [TwoFactorAuthController::class, 'confirm'])->name('2fa.confirm');
+
+    // User & Role Administration
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle_status');
 
     // Donor Management
     Route::resource('donors', DonorController::class);
@@ -53,6 +57,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin',
     Route::get('/hospitals/{hospital}', [HospitalAdminController::class, 'show'])->name('hospitals.show');
     Route::get('/hospitals/{hospital}/edit', [HospitalAdminController::class, 'edit'])->name('hospitals.edit');
     Route::put('/hospitals/{hospital}', [HospitalAdminController::class, 'update'])->name('hospitals.update');
+    Route::delete('/hospitals/{hospital}', [HospitalAdminController::class, 'destroy'])->name('hospitals.destroy');
     Route::get('/patients', [PatientAdminController::class, 'index'])->name('patients.index');
     Route::get('/patients/{patient}', [PatientAdminController::class, 'show'])->name('patients.show');
     
@@ -78,42 +83,38 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin',
     Route::post('/blood-requests/{id}/notify-donors', [BloodRequestAdminController::class, 'notifyDonors'])->name('blood_requests.notify_donors');
     Route::post('/blood-requests/{id}/fulfill', [BloodRequestAdminController::class, 'fulfill'])->name('blood_requests.fulfill');
     Route::post('/blood-requests/{id}/dispense', [BloodRequestAdminController::class, 'dispenseBlood'])->name('blood_requests.dispense');
+    Route::delete('/blood-requests/{id}', [BloodRequestAdminController::class, 'destroy'])->name('blood_requests.destroy');
+
+    // System Notifications Feed (Live Center)
+    Route::get('/notifications-feed', [NotificationCenterController::class, 'index'])->name('notifications_feed.index');
+    Route::post('/notifications-feed/{notification}/mark-read', [NotificationCenterController::class, 'markAsRead'])->name('notifications_feed.mark_read');
+    Route::post('/notifications-feed/mark-all-read', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.mark_all_read');
 
     // System Broadcast Notifications Management
     Route::resource('notifications', NotificationController::class);
-    Route::post('/notifications/send-bulk', [NotificationController::class, 'sendBulk'])->name('notifications.send_bulk');
     
-    // Reports and Export
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [ReportController::class, 'index'])->name('index');
-        Route::get('/donors', [ReportController::class, 'donorReport'])->name('donors');
-        Route::get('/donations', [ReportController::class, 'donationReport'])->name('donations');
-        Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('inventory');
-        Route::get('/monthly-stats', [ReportController::class, 'monthlyStats'])->name('monthly-stats');
-    });
+    // Analytics & Operational Reports
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
+    Route::get('/reports/donations', [ReportController::class, 'donationsReport'])->name('reports.donations');
+    Route::get('/reports/hospital-requests', [ReportController::class, 'hospitalRequestsReport'])->name('reports.hospital_requests');
+    Route::get('/reports/export', [ReportController::class, 'exportReport'])->name('reports.export');
     
-    // Settings Management
-    Route::prefix('settings')->name('settings.')->group(function () {
-        Route::get('/', [SettingsController::class, 'index'])->name('index');
-        Route::put('/', [SettingsController::class, 'update'])->name('update');
-        
-        // Blood Groups Management
-        Route::get('/blood-groups', [SettingsController::class, 'manageBloodGroups'])->name('blood_groups');
-        Route::post('/blood-groups', [SettingsController::class, 'storeBloodGroup'])->name('blood_groups.store');
-        Route::put('/blood-groups/{bloodGroup}', [SettingsController::class, 'updateBloodGroup'])->name('blood_groups.update');
-        Route::delete('/blood-groups/{bloodGroup}', [SettingsController::class, 'destroyBloodGroup'])->name('blood_groups.destroy');
-        
-        // Cities Management
-        Route::get('/cities', [SettingsController::class, 'manageCities'])->name('cities');
-        Route::put('/cities', [SettingsController::class, 'updateCities'])->name('cities.update');
-    });
+    // Immutable Security & Activity Logs
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('/activity-logs-alt', [ActivityLogController::class, 'index'])->name('activity_logs.index');
+    Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show'])->name('activity_logs.show');
     
-    // User Management
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('store');
-        Route::put('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('update');
-        Route::delete('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/toggle-status', [\App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('toggle_status');
-    });
+    // Platform Configuration & Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings/blood-groups', [SettingsController::class, 'manageBloodGroups'])->name('settings.blood_groups');
+    Route::post('/settings/blood-groups', [SettingsController::class, 'storeBloodGroup'])->name('settings.blood_groups.store');
+    Route::put('/settings/blood-groups/{bloodGroup}', [SettingsController::class, 'updateBloodGroup'])->name('settings.blood_groups.update');
+    Route::delete('/settings/blood-groups/{bloodGroup}', [SettingsController::class, 'destroyBloodGroup'])->name('settings.blood_groups.destroy');
+    Route::get('/settings/cities', [SettingsController::class, 'manageCities'])->name('settings.cities');
+    Route::post('/settings/cities', [SettingsController::class, 'storeCity'])->name('settings.cities.store');
+    Route::put('/settings/cities/{index}', [SettingsController::class, 'updateCity'])->name('settings.cities.update');
+    Route::delete('/settings/cities/{index}', [SettingsController::class, 'destroyCity'])->name('settings.cities.destroy');
+    Route::post('/settings/cities-legacy', [SettingsController::class, 'updateCities'])->name('settings.cities.update_legacy');
 });

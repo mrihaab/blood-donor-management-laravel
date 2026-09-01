@@ -73,9 +73,49 @@
                         </div>
                     </div>
                     <div class="ml-4 flex items-center md:ml-6 space-x-4">
-                        <a href="{{ route('admin.notifications.index') }}" class="relative rounded-full bg-white p-1 text-slate-400 hover:text-slate-500">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                        </a>
+                        <!-- Dynamic Notification Bell Feed Dropdown -->
+                        <div class="relative" x-data="{ 
+                            notifOpen: false, 
+                            unreadCount: 0, 
+                            notifications: [],
+                            fetchNotifs() {
+                                fetch('{{ route('notifications.unread_feed') }}')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        this.unreadCount = data.unreadCount;
+                                        this.notifications = data.notifications;
+                                    })
+                                    .catch(() => {});
+                            }
+                        }" x-init="fetchNotifs(); setInterval(() => fetchNotifs(), 10000)">
+                            <button @click="notifOpen = !notifOpen" class="relative rounded-full bg-slate-50 p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none transition">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                <template x-if="unreadCount > 0">
+                                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow" x-text="unreadCount"></span>
+                                </template>
+                            </button>
+
+                            <div x-show="notifOpen" @click.away="notifOpen = false" class="absolute right-0 mt-2 w-80 rounded-xl bg-white p-4 shadow-xl border border-slate-200 z-50 space-y-3">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Notifications Feed</h4>
+                                    <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full" x-text="unreadCount + ' Unread'"></span>
+                                </div>
+                                <div class="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                                    <template x-for="item in notifications" :key="item.id">
+                                        <div class="py-2 space-y-1">
+                                            <p class="text-xs font-bold text-slate-900" x-text="item.title"></p>
+                                            <p class="text-[11px] text-slate-600" x-text="item.message"></p>
+                                        </div>
+                                    </template>
+                                    <template x-if="notifications.length === 0">
+                                        <p class="text-xs text-slate-400 italic text-center py-3">No unread notifications.</p>
+                                    </template>
+                                </div>
+                                <div class="border-t border-slate-100 pt-2 text-center">
+                                    <a href="{{ route('admin.notifications_feed.index') }}" class="text-xs font-bold text-red-600 hover:underline">View All Notifications Feed &rarr;</a>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- User Profile Dropdown -->
                         <div class="relative" x-data="{ userMenuOpen: false }">
@@ -99,22 +139,13 @@
                 </div>
             </div>
 
-            <!-- Page Content -->
-            <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-                @if (session('success'))
-                    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 text-sm font-semibold flex items-center justify-between">
-                        <span>{{ session('success') }}</span>
+            <!-- Page Body Slot -->
+            <main class="flex-1">
+                <div class="py-8">
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        @yield('content')
                     </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 text-sm font-semibold flex items-center justify-between">
-                        <span>{{ session('error') }}</span>
-                    </div>
-                @endif
-
-                {{ $slot ?? '' }}
-                @yield('content')
+                </div>
             </main>
         </div>
     </div>

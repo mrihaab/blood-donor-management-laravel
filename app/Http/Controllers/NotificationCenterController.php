@@ -30,6 +30,29 @@ class NotificationCenterController extends Controller
         return view($viewName, compact('notifications', 'unreadCount'));
     }
 
+    public function unreadFeed()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['unreadCount' => 0, 'notifications' => []]);
+        }
+
+        $unreadCount = UserNotification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+
+        $notifications = UserNotification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return response()->json([
+            'unreadCount' => $unreadCount,
+            'notifications' => $notifications,
+        ]);
+    }
+
     public function markAsRead(UserNotification $notification)
     {
         $user = Auth::user();

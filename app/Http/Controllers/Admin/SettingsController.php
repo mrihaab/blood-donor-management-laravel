@@ -126,8 +126,62 @@ class SettingsController extends Controller
 
     public function manageCities()
     {
-        $cities = SystemSetting::get('cities', []);
+        $cities = SystemSetting::get('cities', ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Peshawar', 'Faisalabad', 'Multan', 'Quetta']);
         return view('admin.settings.cities', compact('cities'));
+    }
+
+    public function storeCity(Request $request)
+    {
+        $request->validate([
+            'city_name' => 'required|string|max:100',
+        ]);
+
+        $cities = SystemSetting::get('cities', ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Peshawar', 'Faisalabad', 'Multan', 'Quetta']);
+        $newCity = trim($request->city_name);
+
+        if (!in_array($newCity, $cities)) {
+            $cities[] = $newCity;
+            SystemSetting::set('cities', array_values($cities), 'json');
+        }
+
+        return redirect()->route('admin.settings.cities')
+            ->with('success', "Operational city '{$newCity}' added successfully!");
+    }
+
+    public function updateCity(Request $request, $index)
+    {
+        $request->validate([
+            'city_name' => 'required|string|max:100',
+        ]);
+
+        $cities = SystemSetting::get('cities', ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Peshawar', 'Faisalabad', 'Multan', 'Quetta']);
+        $index = (int)$index;
+
+        if (isset($cities[$index])) {
+            $cities[$index] = trim($request->city_name);
+            SystemSetting::set('cities', array_values($cities), 'json');
+        }
+
+        return redirect()->route('admin.settings.cities')
+            ->with('success', "Operational city updated successfully!");
+    }
+
+    public function destroyCity($index)
+    {
+        $cities = SystemSetting::get('cities', ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Peshawar', 'Faisalabad', 'Multan', 'Quetta']);
+        $index = (int)$index;
+
+        if (isset($cities[$index])) {
+            $deleted = $cities[$index];
+            unset($cities[$index]);
+            SystemSetting::set('cities', array_values($cities), 'json');
+
+            return redirect()->route('admin.settings.cities')
+                ->with('success', "Operational city '{$deleted}' removed successfully!");
+        }
+
+        return redirect()->route('admin.settings.cities')
+            ->with('error', "City not found.");
     }
 
     public function updateCities(Request $request)

@@ -10,12 +10,21 @@
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">Physical Blood Units & Barcode Inventory</h1>
             <p class="text-sm text-slate-500">Unit-level bag tracking, component shelf-life, and storage bay management.</p>
         </div>
-        <div>
-            <a href="{{ route('admin.donations.create') }}" class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">
-                + Intake Donation Unit
+        <div class="flex gap-2">
+            <a href="{{ route('admin.inventory.create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition">
+                <span>🩸</span> + Direct Stock Intake
+            </a>
+            <a href="{{ route('admin.donations.create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-900 transition">
+                <span>👤</span> + Intake Donation Unit
             </a>
         </div>
     </div>
+
+    @if (session('success'))
+        <div class="p-4 text-sm text-emerald-800 rounded-lg bg-emerald-50 border border-emerald-200">
+            <span class="font-bold">Success!</span> {{ session('success') }}
+        </div>
+    @endif
 
     <!-- Search & Filter Controls -->
     <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -102,10 +111,17 @@
                         <td class="px-6 py-4">
                             <x-status-badge :status="$unit->status" />
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right space-x-2">
                             <a href="{{ route('admin.inventory.show', $unit) }}" class="inline-flex items-center rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                 Audit Trail
                             </a>
+                            <form method="POST" action="{{ route('admin.inventory.destroy', $unit) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to discard/delete blood unit {{ $unit->unit_number }}?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition">
+                                    Discard / Delete
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @empty

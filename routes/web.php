@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationCenterController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
         return redirect()->route('donor.dashboard');
     })->name('dashboard');
+
+    Route::get('/notifications/unread-feed', [NotificationCenterController::class, 'unreadFeed'])->name('notifications.unread_feed');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

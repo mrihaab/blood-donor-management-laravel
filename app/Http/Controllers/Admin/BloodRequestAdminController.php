@@ -73,6 +73,19 @@ class BloodRequestAdminController extends Controller
         return back()->with('success', 'Blood dispensed successfully for request.');
     }
 
+    public function destroy($id)
+    {
+        $bloodRequest = BloodRequest::findOrFail($id);
+        $reqId = $bloodRequest->id;
+        $bloodRequest->delete();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->log("Deleted emergency blood request #REQ-{$reqId}");
+
+        return back()->with('success', "Blood request #REQ-{$reqId} deleted successfully.");
+    }
+
     public function notifyDonors($id)
     {
         $bloodRequest = BloodRequest::findOrFail($id);

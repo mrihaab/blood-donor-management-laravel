@@ -153,4 +153,16 @@ class DashboardController extends Controller
             'quickActions'
         ));
     }
+
+    public function emergencyRequests()
+    {
+        $requests = BloodRequest::with(['user', 'approver'])
+            ->orderByRaw("CASE WHEN urgency_level = 'urgent' OR urgency_level = 'emergency' THEN 0 ELSE 1 END")
+            ->latest()
+            ->paginate(15);
+
+        $bloodRequests = $requests;
+
+        return view('admin.blood-requests.index', compact('requests', 'bloodRequests'));
+    }
 }

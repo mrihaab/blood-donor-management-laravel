@@ -39,6 +39,7 @@
                         <th class="px-4 py-3">Associated Hospital</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Registered Date</th>
+                        <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
@@ -60,10 +61,21 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-slate-500">{{ $user->created_at->format('M d, Y') }}</td>
+                            <td class="px-4 py-3 text-right">
+                                @if($user->id !== auth()->id())
+                                    <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to delete user account {{ $user->name }}?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:underline text-xs font-semibold">Delete Account</button>
+                                    </form>
+                                @else
+                                    <span class="text-xs text-slate-400 font-semibold italic">Current User</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">No user accounts found.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">No user accounts found.</td>
                         </tr>
                     @endforelse
                 </tbody>
