@@ -10,24 +10,30 @@
     </style>
 </head>
 <body>
-    <h2>Blood Donation Management System - Donations Report</h2>
+    <h2>Blood Donation Management System - Physical Unit Ingestion Logs Report</h2>
     <p>Generated on: {{ date('Y-m-d H:i:s') }}</p>
     <table>
         <thead>
             <tr>
-                <th>Donor Name</th>
+                <th>Unit Serial #</th>
+                <th>Donor / Source</th>
                 <th>Blood Group</th>
-                <th>Units</th>
-                <th>Date</th>
+                <th>Component</th>
+                <th>Collection Date</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($donations as $donation)
+            @foreach($donations as $unit)
                 <tr>
-                    <td>{{ $donation->donor->user->name ?? 'N/A' }}</td>
-                    <td>{{ $donation->bloodGroup->name ?? 'N/A' }}</td>
-                    <td>{{ $donation->quantity }}</td>
-                    <td>{{ $donation->donation_date ?? $donation->created_at->format('Y-m-d') }}</td>
+                    <td><strong>{{ $unit->unit_number }}</strong></td>
+                    <td>{{ $unit->donor->user->name ?? 'Direct Admin Intake' }}</td>
+                    <td>{{ $unit->bloodGroup->name ?? 'N/A' }}</td>
+                    <td>{{ $unit->component->name ?? 'Whole Blood' }}</td>
+                    <td>{{ $unit->collection_date }}</td>
+                    <td>{{ $unit->expiry_date }}</td>
+                    <td>{{ ucfirst($unit->status) }}</td>
                 </tr>
             @endforeach
         </tbody>

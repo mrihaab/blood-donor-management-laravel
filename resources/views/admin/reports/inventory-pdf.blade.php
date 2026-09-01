@@ -10,22 +10,29 @@
     </style>
 </head>
 <body>
-    <h2>Blood Donation Management System - Inventory Report</h2>
+    <h2>Blood Bank Central Stock Report Certificate</h2>
     <p>Generated on: {{ date('Y-m-d H:i:s') }}</p>
+    <p><strong>Active Available Stock:</strong> {{ $totalAvailable ?? 0 }} Bags &bull; <strong>Total Dispensed:</strong> {{ $totalDispensed ?? 0 }} Bags</p>
     <table>
         <thead>
             <tr>
                 <th>Blood Group</th>
-                <th>Units Available</th>
+                <th>Available Units</th>
+                <th>Donor Intake</th>
+                <th>Direct Admin Intake</th>
+                <th>Expiring Soon (7 Days)</th>
                 <th>Status</th>
             </tr>
         </thead>
         <tbody>
             @foreach($inventory as $item)
                 <tr>
-                    <td>{{ $item->bloodGroup->name ?? 'N/A' }}</td>
-                    <td>{{ $item->units_available ?? $item->quantity }}</td>
-                    <td>{{ ucfirst($item->status) }}</td>
+                    <td><strong>{{ $item['blood_group'] }}</strong></td>
+                    <td>{{ $item['units_available'] }} Bags</td>
+                    <td>{{ $item['donor_intake_count'] }} Bags</td>
+                    <td>{{ $item['direct_intake_count'] }} Bags</td>
+                    <td>{{ $item['expiring_soon'] > 0 ? $item['expiring_soon'] . ' Bag(s)' : '0 Bags' }}</td>
+                    <td>{{ $item['is_low_stock'] ? 'Low Stock Threshold' : 'Optimal Stock' }}</td>
                 </tr>
             @endforeach
         </tbody>
