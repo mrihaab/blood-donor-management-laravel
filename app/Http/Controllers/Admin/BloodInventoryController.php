@@ -67,7 +67,16 @@ class BloodInventoryController extends Controller
         ]);
 
         $bloodGroup = BloodGroup::findOrFail($request->blood_group_id);
+
         $componentId = $request->blood_component_id;
+        if (empty($componentId)) {
+            $defaultComponent = BloodComponent::firstOrCreate(
+                ['name' => 'Whole Blood'],
+                ['code' => 'WB', 'description' => 'Whole Blood Component', 'shelf_life_days' => 42]
+            );
+            $componentId = $defaultComponent->id;
+        }
+
         $expirationDate = now()->addDays((int)$request->expiration_days);
 
         for ($i = 0; $i < (int)$request->units; $i++) {
@@ -75,10 +84,11 @@ class BloodInventoryController extends Controller
             BloodUnit::create([
                 'unit_number' => $unitNumber,
                 'blood_group_id' => $bloodGroup->id,
-                'blood_component_id' => $componentId,
+                'component_id' => $componentId,
+                'collection_date' => now()->format('Y-m-d'),
+                'expiry_date' => $expirationDate->format('Y-m-d'),
                 'status' => 'available',
-                'expiration_date' => $expirationDate,
-                'location' => 'Central Blood Bank Storage Room A',
+                'storage_location' => 'Central Blood Bank Storage Room A',
             ]);
         }
 
@@ -115,7 +125,7 @@ class BloodInventoryController extends Controller
 
     public function lowStockAlerts()
     {
-        $lowStockAlerts = $this->inventoryService->getLowStockAlerts();
+        $lowStockAlerts = $this.inventoryService->getLowStockAlerts();
         return view('admin.inventory.low-stock', compact('lowStockAlerts'));
     }
 }
