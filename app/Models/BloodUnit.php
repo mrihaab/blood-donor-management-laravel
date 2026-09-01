@@ -42,9 +42,14 @@ class BloodUnit extends Model
         return $this->belongsTo(Donation::class);
     }
 
+    public function inventoryTransactions()
+    {
+        return $this->hasMany(InventoryTransaction::class, 'blood_unit_id');
+    }
+
     public function transactions()
     {
-        return $this->hasMany(InventoryTransaction::class);
+        return $this->hasMany(InventoryTransaction::class, 'blood_unit_id');
     }
 
     public function transfusionUnits()
