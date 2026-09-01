@@ -2,6 +2,35 @@
 
 @section('content')
 <div class="space-y-8">
+    <!-- Active Emergency Broadcast Alerts Banner -->
+    @if(isset($activeEmergencyRequests) && count($activeEmergencyRequests) > 0)
+        <div class="space-y-4">
+            @foreach($activeEmergencyRequests as $req)
+                <div class="rounded-2xl border-2 border-red-500 bg-red-50 p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 bg-red-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-md animate-pulse">
+                                🚨 CRITICAL EMERGENCY APPEAL
+                            </span>
+                            <span class="text-xs font-bold text-red-700">Matching Your Blood Group ({{ $req->blood_group }})</span>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-red-950 mt-1">Urgent Blood Needed at {{ $req->hospital }} ({{ $req->city }})</h3>
+                        <p class="text-xs text-red-800 font-medium">Requisition #REQ-{{ $req->id }} &bull; Patient: {{ $req->patient_name }} &bull; Required: {{ $req->units_needed }} Bag(s)</p>
+                    </div>
+
+                    <div>
+                        <form method="POST" action="{{ route('donor.appointments.rsvp_emergency', $req->id) }}">
+                            @csrf
+                            <button type="submit" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 inline-flex items-center gap-2">
+                                🩸 I Can Donate Now (Confirm RSVP)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Donor Hero Header -->
     <div class="rounded-2xl bg-gradient-to-r from-red-800 to-red-600 p-8 text-white shadow-lg">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

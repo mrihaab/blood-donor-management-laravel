@@ -82,6 +82,14 @@ class DashboardController extends Controller
             : now()->format('Y-m-d');
         $isEligible = $eligibility['eligible'] ?? true;
 
+        $activeEmergencyRequests = BloodRequest::where('urgency_level', 'emergency')
+            ->whereIn('status', ['pending', 'approved'])
+            ->when($bloodGroupName !== 'Not Set', function($query) use ($bloodGroupName) {
+                return $query->where('blood_group', $bloodGroupName);
+            })
+            ->latest()
+            ->get();
+
         return view('donor.dashboard', [
             'totalDonations' => $totalDonations,
             'latestDonation' => $latestDonation,
@@ -94,6 +102,7 @@ class DashboardController extends Controller
             'bloodRequests' => $bloodRequests,
             'bloodGroup' => $bloodGroupName,
             'donor' => $donor,
+            'activeEmergencyRequests' => $activeEmergencyRequests,
         ]);
     }
     

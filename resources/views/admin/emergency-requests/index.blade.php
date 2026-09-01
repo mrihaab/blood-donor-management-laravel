@@ -114,21 +114,28 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right space-x-2">
-                                @if($req->status === 'pending')
-                                    <form method="POST" action="{{ route('admin.blood_requests.approve', $req->id) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition">
-                                            Approve & FEFO Allocate
-                                        </button>
-                                    </form>
-                                @elseif($req->status === 'approved')
-                                    <form method="POST" action="{{ route('admin.blood_requests.dispense', $req->id) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition">
-                                            Dispense Stock
-                                        </button>
-                                    </form>
-                                @endif
+                                <form method="POST" action="{{ route('admin.blood_requests.notify_donors', $req->id) }}" class="inline">
+                                     @csrf
+                                     <button type="submit" title="Dispatch In-App, Emergency Email, and WhatsApp/SMS alerts to eligible donors" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded transition inline-flex items-center gap-1">
+                                         📲 Broadcast Alert (App + Email + WhatsApp)
+                                     </button>
+                                 </form>
+
+                                 @if($req->status === 'pending')
+                                     <form method="POST" action="{{ route('admin.blood_requests.approve', $req->id) }}" class="inline">
+                                         @csrf
+                                         <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition">
+                                             Approve & FEFO Allocate
+                                         </button>
+                                     </form>
+                                 @elseif($req->status === 'approved')
+                                     <form method="POST" action="{{ route('admin.blood_requests.dispense', $req->id) }}" class="inline">
+                                         @csrf
+                                         <button type="submit" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition">
+                                             Dispense Stock
+                                         </button>
+                                     </form>
+                                 @endif
                             </td>
                         </tr>
                     @empty

@@ -21,6 +21,7 @@ Route::prefix('donor')->name('donor.')->middleware(['auth', 'verified', 'donor']
     Route::patch('/profile', [DonorProfileController::class, 'update'])->name('profile.update');
     
     // Appointment Management
+    Route::post('/appointments/emergency-rsvp/{id}', [DonorAppointmentController::class, 'rsvpEmergency'])->name('appointments.rsvp_emergency');
     Route::post('/appointments/{id}/cancel', [DonorAppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::resource('appointments', DonorAppointmentController::class)->except(['destroy']);
     

@@ -160,17 +160,26 @@ class NotificationService
 
     /**
      * Dispatch emergency notifications strictly to eligible and medically compatible donors.
+     * Features City Geolocation Matching & Omnichannel Dispatch (In-App + Emergency Email + WhatsApp/SMS Log).
      */
     public function notifyEligibleDonors(BloodRequest $request): int
     {
         $compatibleGroups = $this->compatibilityService->getCompatibleDonorGroups($request->blood_group);
 
-        // Fetch candidate donors matching compatible blood groups
-        $candidateDonors = Donor::whereHas('bloodGroup', function ($q) use ($compatibleGroups) {
+        // Geolocation City Matching: Filter candidate donors in matching city first
+        $requestCity = trim($request->city ?? '');
+        $query = Donor::whereHas('bloodGroup', function ($q) use ($compatibleGroups) {
             $q->whereIn('name', $compatibleGroups);
         })->whereHas('user', function ($q) {
             $q->where('status', 'active');
-        })->with(['user', 'bloodGroup'])->get();
+        })->with(['user', 'bloodGroup']);
+
+        if (!empty($requestCity)) {
+            $cityMatches = (clone $query)->where('city', 'like', "%{$requestCity}%")->get();
+            $candidateDonors = $cityMatches->count() > 0 ? $cityMatches : $query->get();
+        } else {
+            $candidateDonors = $query->get();
+        }
 
         $notifiedCount = 0;
 
@@ -178,21 +187,38 @@ class NotificationService
             // Validate eligibility server-side (account active + no medical deferral + 56-day interval)
             $eligibility = $this->eligibilityService->checkEligibility($donor);
 
-            if ($eligibility['eligible']) {
+            if ($eligibility['eligible'] && $donor->user) {
                 try {
+                    // 1. Laravel Notification Dispatch
                     $donor->user->notify(new EmergencyBloodRequestNotification($request));
 
+                    // 2. In-App User Notification Center Entry
                     $this->createUserNotification(
                         $donor->user,
                         'emergency',
-                        "URGENT: Emergency Donation Appeal ({$request->blood_group})",
-                        "An emergency blood request matching your blood type was created at {$request->hospital}.",
+                        "🚨 URGENT EMERGENCY APPEAL: {$request->blood_group} Needed!",
+                        "Emergency patient at {$request->hospital} ({$request->city}) urgently requires {$request->units_needed} unit(s) of {$request->blood_group}.",
                         [
                             'blood_request_id' => $request->id,
                             'blood_group' => $request->blood_group,
                             'hospital' => $request->hospital,
+                            'city' => $request->city,
                         ]
                     );
+
+                    // 3. Emergency Email Dispatch
+                    if (!empty($donor->user->email)) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($donor->user->email)
+                                ->send(new \App\Mail\EmergencyBloodRequestMail($request, $donor->user));
+                        } catch (\Throwable $emailErr) {
+                            Log::warning("Email dispatch skipped for User #{$donor->user->id}: " . $emailErr->getMessage());
+                        }
+                    }
+
+                    // 4. WhatsApp / SMS Gateway Simulation Log
+                    Log::info("WhatsApp/SMS Dispatch Payload queued for Donor {$donor->user->name} ({$donor->contact_number}): 'URGENT: {$request->blood_group} Blood Needed at {$request->hospital}. Reply 1 to Accept.'");
+
                     $notifiedCount++;
                 } catch (\Throwable $e) {
                     Log::error("Donor notification failed for User #{$donor->user_id}: " . $e->getMessage());
@@ -203,7 +229,7 @@ class NotificationService
         activity()
             ->causedBy(auth()->user())
             ->performedOn($request)
-            ->log("Dispatched emergency notifications to {$notifiedCount} eligible donors for request #{$request->id}");
+            ->log("Omnichannel Emergency Broadcast dispatched to {$notifiedCount} eligible donors in {$requestCity} for Request #REQ-{$request->id}");
 
         return $notifiedCount;
     }

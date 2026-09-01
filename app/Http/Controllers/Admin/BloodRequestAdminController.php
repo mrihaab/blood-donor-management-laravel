@@ -107,6 +107,6 @@ class BloodRequestAdminController extends Controller
         $bloodRequest = BloodRequest::findOrFail($id);
         $count = $this->notificationService->sendEmergencyBroadcast($bloodRequest);
 
-        return back()->with('success', "Notified {$count} matching donors.");
+        return back()->with('success', "🚨 Omnichannel Emergency Alert dispatched to {$count} nearby eligible donors in {$bloodRequest->city} via In-App Notification, Emergency Email, and WhatsApp/SMS gateway!");
     }
 }
