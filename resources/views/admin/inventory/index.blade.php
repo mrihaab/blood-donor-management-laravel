@@ -29,7 +29,7 @@
     <!-- Interactive Top Blood Group Quick Stock Summary Cards -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         @foreach($groupedInventory as $groupItem)
-            <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'blood_group_id' => $groupItem['blood_group_id']]) }}" 
+            <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'blood_group_id' => $groupItem['blood_group_id'], 'status' => 'available']) }}" 
                class="group relative rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-red-500 hover:shadow-md">
                 <div class="flex items-center justify-between">
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700 group-hover:bg-red-600 group-hover:text-white transition">
@@ -60,10 +60,10 @@
                 <span>📊 Grouped Stock Summary</span>
                 <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 font-mono">{{ count($groupedInventory) }} Groups</span>
             </a>
-            <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'source' => $sourceFilter, 'per_page' => $perPage]) }}" 
+            <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'available', 'source' => $sourceFilter, 'per_page' => $perPage]) }}" 
                class="pb-3 border-b-2 transition flex items-center gap-2 {{ $currentTab === 'detailed' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300' }}">
                 <span>🏷️ Barcode Units Tracking</span>
-                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 font-mono">{{ $bloodUnits->total() }} Bags</span>
+                <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700 font-bold font-mono">{{ $statusCounts['available'] }} Available</span>
             </a>
         </nav>
     </div>
@@ -130,7 +130,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right space-x-2">
-                                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'blood_group_id' => $group['blood_group_id']]) }}" 
+                                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'blood_group_id' => $group['blood_group_id'], 'status' => 'available']) }}" 
                                    class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">
                                     View {{ $group['units_available'] }} Bags &rarr;
                                 </a>
@@ -147,10 +147,40 @@
     @else
         <!-- TAB 2: DETAILED BARCODE UNITS TRACKING VIEW -->
         <div class="space-y-4">
+            <!-- Status Quick Filter Pills -->
+            <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'available', 'source' => $sourceFilter]) }}" 
+                   class="px-3.5 py-2 rounded-xl transition border flex items-center gap-1.5 {{ $statusFilter === 'available' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50' }}">
+                    <span>🟢 Available Active Stock</span>
+                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono">{{ $statusCounts['available'] }}</span>
+                </a>
+                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'dispensed', 'source' => $sourceFilter]) }}" 
+                   class="px-3.5 py-2 rounded-xl transition border flex items-center gap-1.5 {{ $statusFilter === 'dispensed' ? 'bg-purple-600 text-white border-purple-600 shadow-sm font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50' }}">
+                    <span>🟣 Dispensed History</span>
+                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono">{{ $statusCounts['dispensed'] }}</span>
+                </a>
+                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'allocated', 'source' => $sourceFilter]) }}" 
+                   class="px-3.5 py-2 rounded-xl transition border flex items-center gap-1.5 {{ $statusFilter === 'allocated' ? 'bg-amber-600 text-white border-amber-600 shadow-sm font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50' }}">
+                    <span>🟡 Reserved / Allocated</span>
+                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono">{{ $statusCounts['allocated'] }}</span>
+                </a>
+                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'expired', 'source' => $sourceFilter]) }}" 
+                   class="px-3.5 py-2 rounded-xl transition border flex items-center gap-1.5 {{ $statusFilter === 'expired' ? 'bg-red-600 text-white border-red-600 shadow-sm font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50' }}">
+                    <span>🔴 Expired / Discarded</span>
+                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono">{{ $statusCounts['expired'] }}</span>
+                </a>
+                <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'all', 'source' => $sourceFilter]) }}" 
+                   class="px-3.5 py-2 rounded-xl transition border flex items-center gap-1.5 {{ $statusFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-sm font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50' }}">
+                    <span>📋 All Records</span>
+                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono">{{ $statusCounts['all'] }}</span>
+                </a>
+            </div>
+
             <!-- Filters Bar -->
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <form method="GET" action="{{ route('admin.inventory.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-5 items-end">
                     <input type="hidden" name="tab" value="detailed">
+                    <input type="hidden" name="status" value="{{ $statusFilter }}">
 
                     <div>
                         <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Search Barcode Serial</label>
@@ -188,7 +218,7 @@
 
                     <div class="flex gap-2">
                         <button type="submit" class="flex-1 rounded-lg bg-slate-900 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">Filter</button>
-                        <a href="{{ route('admin.inventory.index', ['tab' => 'detailed']) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Reset</a>
+                        <a href="{{ route('admin.inventory.index', ['tab' => 'detailed', 'status' => 'available']) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Reset</a>
                     </div>
                 </form>
             </div>
@@ -248,19 +278,21 @@
                                     <a href="{{ route('admin.inventory.show', $unit->id) }}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                         Audit Trail
                                     </a>
-                                    <form method="POST" action="{{ route('admin.inventory.destroy', $unit->id) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to discard/delete blood unit bag {{ $unit->unit_number }}?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition">
-                                            Discard / Delete
-                                        </button>
-                                    </form>
+                                    @if($unit->status === 'available')
+                                        <form method="POST" action="{{ route('admin.inventory.destroy', $unit->id) }}" class="inline-block" onsubmit="return confirm('Are you sure you want to discard/delete blood unit bag {{ $unit->unit_number }}?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition">
+                                                Discard / Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="8" class="p-8">
-                                    <x-empty-state title="No blood unit bags found" description="Physical blood unit bags matching your filter criteria will appear here." />
+                                    <x-empty-state title="No blood unit bags found" description="Physical blood unit bags matching your status filter criteria will appear here." />
                                 </td>
                             </tr>
                         @endforelse

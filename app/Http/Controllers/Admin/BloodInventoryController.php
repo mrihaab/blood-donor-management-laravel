@@ -30,6 +30,9 @@ class BloodInventoryController extends Controller
             $perPage = 25;
         }
 
+        // Default status filter to 'available' unless explicitly provided
+        $statusFilter = $request->has('status') ? $request->input('status') : 'available';
+
         $inventoryOverview = $this->inventoryService->getInventoryOverview();
         $groupedInventory = $this->inventoryService->getGroupedInventoryStock();
         
@@ -44,8 +47,8 @@ class BloodInventoryController extends Controller
             $query->where('blood_group_id', $request->input('blood_group_id'));
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        if ($statusFilter && $statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
         }
 
         // Apply Origin / Source filter
@@ -59,6 +62,15 @@ class BloodInventoryController extends Controller
         $bloodGroups = BloodGroup::all();
         $components = BloodComponent::all();
 
+        // Calculate live status counts for top filter pills
+        $statusCounts = [
+            'available' => BloodUnit::where('status', 'available')->count(),
+            'dispensed' => BloodUnit::where('status', 'dispensed')->count(),
+            'allocated' => BloodUnit::whereIn('status', ['reserved', 'allocated'])->count(),
+            'expired'   => BloodUnit::where('status', 'expired')->count(),
+            'all'       => BloodUnit::count(),
+        ];
+
         return view('admin.inventory.index', compact(
             'inventoryOverview',
             'groupedInventory',
@@ -67,6 +79,8 @@ class BloodInventoryController extends Controller
             'components',
             'currentTab',
             'sourceFilter',
+            'statusFilter',
+            'statusCounts',
             'perPage'
         ));
     }
