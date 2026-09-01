@@ -96,13 +96,14 @@ class AppointmentController extends Controller
                 ->log("Donor {$user->name} confirmed emergency donation RSVP for Request #REQ-{$bloodRequest->id} at {$bloodRequest->hospital}");
 
             // Notify Admin of Donor RSVP Arrival Confirmation
+            $bgName = optional(optional($user->donor)->bloodGroup)->name ?? 'N/A';
             $admins = \App\Models\User::where('role', 'admin')->get();
             foreach ($admins as $admin) {
                 \App\Models\UserNotification::create([
                     'user_id' => $admin->id,
                     'type' => 'emergency_rsvp',
                     'title' => "🩸 EMERGENCY DONOR RSVP CONFIRMED",
-                    'message' => "Donor {$user->name} ({$user->donor->bloodGroup->name ?? 'N/A'}) confirmed arrival RSVP for Request #REQ-{$bloodRequest->id} at {$bloodRequest->hospital}!",
+                    'message' => "Donor {$user->name} ({$bgName}) confirmed arrival RSVP for Request #REQ-{$bloodRequest->id} at {$bloodRequest->hospital}!",
                     'data' => [
                         'donor_id' => $user->donor->id,
                         'blood_request_id' => $bloodRequest->id,
