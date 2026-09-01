@@ -34,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/notifications', [NotificationCenterController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationCenterController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/{notification}/mark-read', [NotificationCenterController::class, 'markAsRead'])->name('notifications.mark_read');
+    Route::post('/notifications/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications.read_all');
+    Route::post('/notifications/mark-all-read', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications.mark_all_read');
     Route::get('/notifications/unread-feed', [NotificationCenterController::class, 'unreadFeed'])->name('notifications.unread_feed');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

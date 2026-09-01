@@ -89,7 +89,9 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     // System Notifications Feed (Live Center)
     Route::get('/notifications-feed', [NotificationCenterController::class, 'index'])->name('notifications_feed.index');
     Route::post('/notifications-feed/{notification}/mark-read', [NotificationCenterController::class, 'markAsRead'])->name('notifications_feed.mark_read');
+    Route::post('/notifications-feed/{notification}/read', [NotificationCenterController::class, 'markAsRead'])->name('notifications_feed.read');
     Route::post('/notifications-feed/mark-all-read', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.mark_all_read');
+    Route::post('/notifications-feed/read-all', [NotificationCenterController::class, 'markAllAsRead'])->name('notifications_feed.read_all');
 
     // System Broadcast Notifications Management
     Route::resource('notifications', NotificationController::class);
