@@ -49,6 +49,42 @@ class BloodInventoryService
         });
     }
 
+    public function getGroupedInventoryStock()
+    {
+        $bloodGroups = BloodGroup::all();
+        $threshold = SystemSetting::get('low_stock_threshold', 10);
+
+        return $bloodGroups->map(function ($group) use ($threshold) {
+            $available = BloodUnit::where('blood_group_id', $group->id)
+                ->where('status', 'available')
+                ->where('expiry_date', '>=', now()->format('Y-m-d'));
+
+            $availableCount = (clone $available)->count();
+
+            $donorIntakeCount = (clone $available)->whereNotNull('donor_id')->count();
+            $directIntakeCount = (clone $available)->whereNull('donor_id')->count();
+
+            $expiringSoonCount = (clone $available)
+                ->whereBetween('expiry_date', [now()->format('Y-m-d'), now()->addDays(7)->format('Y-m-d')])
+                ->count();
+
+            $reservedCount = BloodUnit::where('blood_group_id', $group->id)
+                ->whereIn('status', ['reserved', 'allocated'])
+                ->count();
+
+            return [
+                'blood_group_id'      => $group->id,
+                'blood_group'         => $group->name,
+                'units_available'     => (int) $availableCount,
+                'units_reserved'      => (int) $reservedCount,
+                'donor_intake_count'  => (int) $donorIntakeCount,
+                'direct_intake_count' => (int) $directIntakeCount,
+                'expiring_soon'       => (int) $expiringSoonCount,
+                'is_low_stock'        => $availableCount < $threshold,
+            ];
+        });
+    }
+
     public function getLowStockAlerts()
     {
         $threshold = SystemSetting::get('low_stock_threshold', 10);

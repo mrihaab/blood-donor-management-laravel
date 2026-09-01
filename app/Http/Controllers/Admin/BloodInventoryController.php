@@ -23,7 +23,15 @@ class BloodInventoryController extends Controller
     {
         $this->authorize('viewAny', BloodUnit::class);
 
+        $currentTab = $request->input('tab', 'grouped'); // 'grouped' or 'detailed'
+        $sourceFilter = $request->input('source', 'all'); // 'all', 'donor', 'direct'
+        $perPage = (int) $request->input('per_page', 25);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 25;
+        }
+
         $inventoryOverview = $this->inventoryService->getInventoryOverview();
+        $groupedInventory = $this->inventoryService->getGroupedInventoryStock();
         
         $query = BloodUnit::with(['bloodGroup', 'component', 'donor.user']);
 
@@ -40,11 +48,27 @@ class BloodInventoryController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        $bloodUnits = $query->latest()->paginate(15)->withQueryString();
+        // Apply Origin / Source filter
+        if ($sourceFilter === 'donor') {
+            $query->whereNotNull('donor_id');
+        } elseif ($sourceFilter === 'direct') {
+            $query->whereNull('donor_id');
+        }
+
+        $bloodUnits = $query->latest()->paginate($perPage)->withQueryString();
         $bloodGroups = BloodGroup::all();
         $components = BloodComponent::all();
 
-        return view('admin.inventory.index', compact('inventoryOverview', 'bloodUnits', 'bloodGroups', 'components'));
+        return view('admin.inventory.index', compact(
+            'inventoryOverview',
+            'groupedInventory',
+            'bloodUnits',
+            'bloodGroups',
+            'components',
+            'currentTab',
+            'sourceFilter',
+            'perPage'
+        ));
     }
 
     public function create()
@@ -96,7 +120,7 @@ class BloodInventoryController extends Controller
             ->causedBy(auth()->user())
             ->log("Manually ingested {$request->units} units of {$bloodGroup->name} into central inventory");
 
-        return redirect()->route('admin.inventory.index')
+        return redirect()->route('admin.inventory.index', ['tab' => 'grouped'])
             ->with('success', "Successfully added {$request->units} blood unit bag(s) of {$bloodGroup->name} to inventory.");
     }
 
