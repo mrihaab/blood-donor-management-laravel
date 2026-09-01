@@ -86,17 +86,23 @@
                             </template>
                         </button>
 
-                        <div x-show="notifOpen" @click.away="notifOpen = false" class="absolute right-0 mt-2 w-80 rounded-xl bg-white p-4 shadow-xl border border-slate-200 z-50 space-y-3">
+                        <div x-show="notifOpen" @click.away="notifOpen = false" class="absolute right-0 mt-2 w-84 rounded-xl bg-white p-4 shadow-xl border border-slate-200 z-50 space-y-3">
                             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Notifications Feed</h4>
-                                <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full" x-text="unreadCount + ' Unread'"></span>
+                                <div class="flex items-center gap-2">
+                                    <form method="POST" action="{{ route('notifications.mark_all_read') }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-[10px] font-bold text-slate-500 hover:text-red-600 underline">✓ Mark All Read</button>
+                                    </form>
+                                    <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full" x-text="unreadCount + ' Unread'"></span>
+                                </div>
                             </div>
                             <div class="max-h-60 overflow-y-auto divide-y divide-slate-100">
                                 <template x-for="item in notifications" :key="item.id">
-                                    <div class="py-2 space-y-1">
-                                        <p class="text-xs font-bold text-slate-900" x-text="item.title"></p>
+                                    <a :href="'/notifications/' + item.id + '/click'" class="block py-2 space-y-1 hover:bg-slate-50 rounded-lg px-2 transition group text-left">
+                                        <p class="text-xs font-bold text-slate-900 group-hover:text-red-600" x-text="item.title"></p>
                                         <p class="text-[11px] text-slate-600" x-text="item.message"></p>
-                                    </div>
+                                    </a>
                                 </template>
                                 <template x-if="notifications.length === 0">
                                     <p class="text-xs text-slate-400 italic text-center py-3">No unread notifications.</p>

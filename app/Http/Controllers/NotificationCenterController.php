@@ -79,4 +79,44 @@ class NotificationCenterController extends Controller
 
         return back()->with('success', 'All notifications marked as read.');
     }
+
+    public function clickAndRedirect(UserNotification $notification)
+    {
+        $user = Auth::user();
+
+        if ((int)$notification->user_id !== (int)$user->id) {
+            abort(403, 'Unauthorized notification access.');
+        }
+
+        if (!$notification->read_at) {
+            $notification->update(['read_at' => now()]);
+        }
+
+        $targetUrl = match($notification->type) {
+            'emergency', 'blood_request' => match($user->role) {
+                'admin' => route('admin.emergency_requests.index'),
+                'hospital' => route('hospital.requisitions.index'),
+                default => route('donor.dashboard'),
+            },
+            'emergency_rsvp' => match($user->role) {
+                'admin' => route('admin.appointments.index'),
+                default => route('donor.appointments.index'),
+            },
+            'appointment' => match($user->role) {
+                'admin' => route('admin.appointments.index'),
+                default => route('donor.appointments.index'),
+            },
+            'transfusion', 'transfusion_reaction' => match($user->role) {
+                'admin' => route('admin.transfusions.index'),
+                default => route('hospital.transfusions.index'),
+            },
+            default => match($user->role) {
+                'admin' => route('admin.dashboard'),
+                'hospital' => route('hospital.dashboard'),
+                default => route('donor.dashboard'),
+            },
+        };
+
+        return redirect($targetUrl);
+    }
 }
