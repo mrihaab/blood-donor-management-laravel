@@ -7,11 +7,12 @@
 
     <title>@yield('title', 'Hospital Portal') - {{ config('app.name', 'Blood Bank Operations Platform') }}</title>
 
-    <!-- Fonts -->
+    <!-- Fonts & Tailwind & Alpine.js -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- Scripts and Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full font-sans antialiased text-gray-900 bg-gray-50" x-data="{ sidebarOpen: false }">
@@ -40,6 +41,9 @@
                 <a href="{{ route('hospital.patients.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('hospital.patients.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} transition">
                     Patient Directory
                 </a>
+                <a href="{{ route('notifications.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('notifications.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} transition">
+                    Notifications Feed
+                </a>
             </nav>
 
             <div class="p-4 border-t border-slate-800">
@@ -62,7 +66,51 @@
                 <div>
                     <h1 class="text-xl font-bold text-gray-900">@yield('page_title', 'Hospital Dashboard')</h1>
                 </div>
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-4">
+                    <!-- Dynamic Live Notification Bell Dropdown -->
+                    <div class="relative" x-data="{ 
+                        notifOpen: false, 
+                        unreadCount: 0, 
+                        notifications: [],
+                        fetchNotifs() {
+                            fetch('{{ route('notifications.unread_feed') }}')
+                                .then(res => res.json())
+                                .then(data => {
+                                    this.unreadCount = data.unreadCount;
+                                    this.notifications = data.notifications;
+                                })
+                                .catch(() => {});
+                        }
+                    }" x-init="fetchNotifs(); setInterval(() => fetchNotifs(), 5000)">
+                        <button @click="notifOpen = !notifOpen" class="relative rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 hover:text-slate-900 focus:outline-none transition">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <template x-if="unreadCount > 0">
+                                <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow" x-text="unreadCount"></span>
+                            </template>
+                        </button>
+
+                        <div x-show="notifOpen" @click.away="notifOpen = false" class="absolute right-0 mt-2 w-80 rounded-xl bg-white p-4 shadow-xl border border-slate-200 z-50 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Notifications Feed</h4>
+                                <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full" x-text="unreadCount + ' Unread'"></span>
+                            </div>
+                            <div class="max-h-60 overflow-y-auto divide-y divide-slate-100">
+                                <template x-for="item in notifications" :key="item.id">
+                                    <div class="py-2 space-y-1">
+                                        <p class="text-xs font-bold text-slate-900" x-text="item.title"></p>
+                                        <p class="text-[11px] text-slate-600" x-text="item.message"></p>
+                                    </div>
+                                </template>
+                                <template x-if="notifications.length === 0">
+                                    <p class="text-xs text-slate-400 italic text-center py-3">No unread notifications.</p>
+                                </template>
+                            </div>
+                            <div class="border-t border-slate-100 pt-2 text-center">
+                                <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-blue-600 hover:underline">View All Notifications &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
                         {{ auth()->user()->hospital->name ?? 'Clinical Partner' }}
                     </span>

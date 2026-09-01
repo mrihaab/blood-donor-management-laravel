@@ -60,9 +60,11 @@ class BloodRequestService
                 'status'           => 'pending',
             ]);
 
+            // Always notify Admin when a new requisition is created
+            $this->notificationService->notifyAdminRequestCreated($request);
+
             $urgency = $data['urgency'] ?? 'emergency';
             if ($urgency === 'emergency') {
-                $this->notificationService->notifyAdminEmergencyRequest($request);
                 $this->notificationService->notifyEligibleDonors($request);
             }
 

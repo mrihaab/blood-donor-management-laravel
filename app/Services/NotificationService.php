@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
 use App\Models\BloodRequest;
 use App\Models\Donor;
 use App\Models\Transfusion;
@@ -49,19 +50,20 @@ class NotificationService
     }
 
     /**
-     * Notify administrators when an emergency requisition is filed.
+     * Notify administrators when any blood requisition is filed by a hospital.
      */
-    public function notifyAdminEmergencyRequest(BloodRequest $request): int
+    public function notifyAdminRequestCreated(BloodRequest $request): int
     {
         $admins = User::where('role', 'admin')->get();
         $count = 0;
+        $urgencyUpper = strtoupper($request->urgency_level);
 
         foreach ($admins as $admin) {
             $this->createUserNotification(
                 $admin,
-                'emergency',
-                "CRITICAL: Emergency Requisition #REQ-{$request->id}",
-                "Emergency blood request for {$request->units_needed} unit(s) of {$request->blood_group} submitted by {$request->hospital}.",
+                $request->urgency_level === 'emergency' ? 'emergency' : 'blood_request',
+                "NEW REQUISITION: #REQ-{$request->id} ({$urgencyUpper})",
+                "Hospital '{$request->hospital}' requested {$request->units_needed} unit(s) of {$request->blood_group}.",
                 [
                     'blood_request_id' => $request->id,
                     'hospital_id' => $request->hospital_id,
@@ -76,7 +78,55 @@ class NotificationService
     }
 
     /**
-     * Notify hospital user when requisition status updates.
+     * Notify administrators when an emergency requisition is filed (legacy alias).
+     */
+    public function notifyAdminEmergencyRequest(BloodRequest $request): int
+    {
+        return $this->notifyAdminRequestCreated($request);
+    }
+
+    /**
+     * Notify administrators when a donor schedules an appointment.
+     */
+    public function notifyAdminAppointmentBooked(Appointment $appointment): int
+    {
+        $admins = User::where('role', 'admin')->get();
+        $count = 0;
+        $donorName = optional(optional($appointment->donor)->user)->name ?? 'Donor';
+
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'appointment',
+                "NEW APPOINTMENT: Donor {$donorName}",
+                "Donor {$donorName} booked a donation appointment for {$appointment->appointment_date}.",
+                ['appointment_id' => $appointment->id]
+            );
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Notify donor when appointment status changes.
+     */
+    public function notifyDonorAppointmentStatusChange(Appointment $appointment, string $status): void
+    {
+        if (optional($appointment->donor)->user) {
+            $statusUpper = strtoupper($status);
+            $this->createUserNotification(
+                $appointment->donor->user,
+                'appointment',
+                "APPOINTMENT STATUS: {$statusUpper}",
+                "Your donation appointment for {$appointment->appointment_date} has been marked as {$status}.",
+                ['appointment_id' => $appointment->id, 'status' => $status]
+            );
+        }
+    }
+
+    /**
+     * Notify hospital user when requisition status updates (approved, rejected, dispensed).
      */
     public function notifyHospitalStatusChange(BloodRequest $request, string $status, ?string $reason = null): int
     {
@@ -85,7 +135,7 @@ class NotificationService
             $user = User::find($request->user_id);
             if ($user) {
                 $statusUpper = strtoupper($status);
-                $title = "Requisition #REQ-{$request->id} {$statusUpper}";
+                $title = "REQUISITION STATUS: #REQ-{$request->id} {$statusUpper}";
                 $message = "Your requisition for {$request->units_needed} unit(s) of {$request->blood_group} has been {$status}.";
                 if ($reason) {
                     $message .= " Reason: {$reason}";

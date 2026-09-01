@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return redirect()->route('donor.dashboard');
     })->name('dashboard');
 
+    Route::get('/notifications', [NotificationCenterController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-feed', [NotificationCenterController::class, 'unreadFeed'])->name('notifications.unread_feed');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

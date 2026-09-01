@@ -10,10 +10,14 @@ use Illuminate\Support\Facades\DB;
 class AppointmentService
 {
     protected DonorEligibilityService $eligibilityService;
+    protected NotificationService $notificationService;
 
-    public function __construct(DonorEligibilityService $eligibilityService)
-    {
+    public function __construct(
+        DonorEligibilityService $eligibilityService,
+        NotificationService $notificationService
+    ) {
         $this->eligibilityService = $eligibilityService;
+        $this->notificationService = $notificationService;
     }
 
     public function bookAppointment(Donor $donor, array $data): Appointment
@@ -35,6 +39,8 @@ class AppointmentService
                 'notes' => $data['notes'] ?? null,
                 'location' => $data['location'] ?? 'Main Blood Bank',
             ]);
+
+            $this->notificationService->notifyAdminAppointmentBooked($appointment);
 
             activity()
                 ->causedBy($donor->user)
@@ -66,6 +72,8 @@ class AppointmentService
 
         return DB::transaction(function () use ($appointment, $targetStatus, $actor) {
             $appointment->update(['status' => $targetStatus]);
+
+            $this->notificationService->notifyDonorAppointmentStatusChange($appointment, $targetStatus);
 
             activity()
                 ->causedBy($actor ?? auth()->user())
