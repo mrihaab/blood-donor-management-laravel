@@ -7,14 +7,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Public route
+// Direct Clinical App Entry Route (Hospital Staff & Operations First)
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        if ($user->role === 'hospital') {
+            return redirect()->route('hospital.dashboard');
+        }
+        return redirect()->route('donor.dashboard');
+    }
+    return redirect()->route('login');
 });
 
 // Breeze auth routes

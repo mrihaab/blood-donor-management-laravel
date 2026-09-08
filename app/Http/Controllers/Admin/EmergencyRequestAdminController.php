@@ -49,6 +49,11 @@ class EmergencyRequestAdminController extends Controller
         ->orderBy('created_at', 'asc')
         ->paginate(15);
 
+        $requests->getCollection()->transform(function ($req) {
+            $req->fefo_unit = app(\App\Services\BloodRequestService::class)->getRecommendedFefoUnit($req);
+            return $req;
+        });
+
         $hospitals = Hospital::all();
         $bloodGroups = BloodGroup::all();
 

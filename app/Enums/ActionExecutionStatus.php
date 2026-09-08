@@ -1,0 +1,14 @@
+<?php
+
+namespace App\Enums;
+
+enum ActionExecutionStatus: string
+{
+    case EXECUTING = 'EXECUTING';
+    case COMPLETED = 'COMPLETED';
+    case EXECUTION_UNKNOWN = 'EXECUTION_UNKNOWN';
+    case RECONCILIATION_NOT_FOUND = 'RECONCILIATION_NOT_FOUND';
+    case FAILED_RETRYABLE = 'FAILED_RETRYABLE';
+    case FAILED_FINAL = 'FAILED_FINAL';
+    case QUARANTINED = 'QUARANTINED';
+}

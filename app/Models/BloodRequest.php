@@ -25,6 +25,11 @@ class BloodRequest extends Model
         'units_needed',
         'urgency_level',
         'contact_number',
+        'attendant_name',
+        'attendant_phone',
+        'ward_name',
+        'room_number',
+        'bed_number',
         'approved_at',
         'approved_by',
         'rejected_at',
@@ -81,7 +86,7 @@ class BloodRequest extends Model
 
     public function bloodGroup()
     {
-        return BloodGroup::where('name', $this->blood_group)->first();
+        return $this->belongsTo(BloodGroup::class, 'blood_group', 'name');
     }
 
     public function scopeByBloodGroup($query, $bloodGroup)

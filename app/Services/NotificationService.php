@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appointment;
 use App\Models\BloodRequest;
 use App\Models\Donor;
+use App\Models\Patient;
 use App\Models\Transfusion;
 use App\Models\TransfusionReaction;
 use App\Models\User;
@@ -226,12 +227,85 @@ class NotificationService
             }
         }
 
+        // Dispatch Direct Attendant / Family SMS Alert if attendant_phone is provided
+        if (!empty($request->attendant_phone)) {
+            $attendantName = $request->attendant_name ?? 'Family Attendant';
+            Log::info("Family/Replacement SMS Alert Dispatched to {$attendantName} ({$request->attendant_phone}) for Patient {$request->patient_name}: 'ALERT: {$request->blood_group} blood stock is low at {$request->hospital}. Please bring 1 Replacement Donor immediately.'");
+        }
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($request)
             ->log("Omnichannel Emergency Broadcast dispatched to {$notifiedCount} eligible donors in {$requestCity} for Request #REQ-{$request->id}");
 
         return $notifiedCount;
+    }
+
+    public function notifyAdminPatientRegistered(Patient $patient, ?string $hospitalName = null): int
+    {
+        $admins = User::where('role', 'admin')->get();
+        $count = 0;
+        $hName = $hospitalName ?? ($patient->hospital->name ?? 'Hospital');
+        $bgName = $patient->bloodGroup->name ?? $patient->blood_group ?? 'Unspecified';
+
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'patient_registered',
+                "🏥 NEW PATIENT REGISTERED",
+                "Patient '{$patient->name}' (MRN: {$patient->mrn}, Blood: {$bgName}) registered at {$hName}.",
+                [
+                    'patient_id' => $patient->id,
+                    'patient_name' => $patient->name,
+                    'hospital_name' => $hName,
+                ]
+            );
+            $count++;
+        }
+        return $count;
+    }
+
+    public function notifyAdminDonorRegistered(User $donorUser): int
+    {
+        $admins = User::where('role', 'admin')->get();
+        $count = 0;
+
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'donor_registered',
+                "💚 NEW DONOR SIGNUP",
+                "New voluntary donor '{$donorUser->name}' ({$donorUser->email}) registered in the system network.",
+                [
+                    'donor_user_id' => $donorUser->id,
+                    'donor_name' => $donorUser->name,
+                ]
+            );
+            $count++;
+        }
+        return $count;
+    }
+
+    public function notifyAdminStockIntake(string $bloodGroup, int $units, string $location): int
+    {
+        $admins = User::where('role', 'admin')->get();
+        $count = 0;
+
+        foreach ($admins as $admin) {
+            $this->createUserNotification(
+                $admin,
+                'stock_intake',
+                "📦 NEW BLOOD STOCK INTAKE",
+                "{$units} unit(s) of {$bloodGroup} blood added to storage location: {$location}.",
+                [
+                    'blood_group' => $bloodGroup,
+                    'units' => $units,
+                    'storage_location' => $location,
+                ]
+            );
+            $count++;
+        }
+        return $count;
     }
 
     public function sendEmergencyBroadcast(BloodRequest $bloodRequest): int

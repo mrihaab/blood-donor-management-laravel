@@ -18,6 +18,9 @@ class Patient extends Model
         'blood_group_id',
         'contact_number',
         'status',
+        'ward_name',
+        'room_number',
+        'bed_number',
     ];
 
     protected $casts = [

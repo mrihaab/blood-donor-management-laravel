@@ -88,6 +88,51 @@ class Phase3RemediationTest extends TestCase
 
     public function test_confirmation_dialog_and_blood_request_action_forms_render_csrf_and_action_attributes()
     {
+        $hospital = \App\Models\Hospital::create([
+            'name' => 'City Hospital',
+            'license_number' => 'HOSP-999',
+            'address' => '123 St',
+            'city' => 'Metropolis',
+            'state' => 'NY',
+            'contact_person' => 'Dr. Jones',
+            'contact_phone' => '555-9999',
+            'email' => 'city@hospital.org',
+            'status' => 'active',
+        ]);
+        $patient = \App\Models\Patient::create([
+            'hospital_id' => $hospital->id,
+            'name' => 'John Patient',
+            'mrn' => 'MRN-9999',
+            'gender' => 'male',
+            'blood_group_id' => $this->groupA->id,
+            'status' => 'active',
+        ]);
+        \App\Models\BloodRequest::create([
+            'hospital_id' => $hospital->id,
+            'hospital' => $hospital->name,
+            'patient_id' => $patient->id,
+            'patient_name' => $patient->name,
+            'user_id' => $this->adminUser->id,
+            'blood_group_id' => $this->groupA->id,
+            'blood_group' => 'A+',
+            'city' => 'Metropolis',
+            'units_needed' => 2,
+            'urgency_level' => 'urgent',
+            'status' => 'pending',
+            'required_by' => now()->addHours(6),
+        ]);
+
+        for ($i = 1; $i <= 2; $i++) {
+            \App\Models\BloodUnit::create([
+                'unit_number' => "UNIT-A-TEST-{$i}",
+                'blood_group_id' => $this->groupA->id,
+                'component_id' => $this->componentPRBC->id,
+                'collection_date' => now()->subDays(2)->format('Y-m-d'),
+                'expiry_date' => now()->addDays(30)->format('Y-m-d'),
+                'status' => 'available',
+            ]);
+        }
+
         $response = $this->actingAs($this->adminUser)->get(route('admin.blood_requests.index'));
         $response->assertStatus(200);
         $response->assertSee('confirm-reject');

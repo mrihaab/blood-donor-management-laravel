@@ -155,6 +155,8 @@ class DashboardController extends Controller
                 return $req;
             });
 
+        $safetyEpoch = DB::table('ai_safety_epoch')->where('id', 1)->value('epoch_version') ?? 1;
+
         return view('admin.dashboard', compact(
             'totalDonors',
             'activeDonors', 
@@ -173,7 +175,8 @@ class DashboardController extends Controller
             'recentActivities',
             'thisMonthStats',
             'quickActions',
-            'activeEmergencyRequests'
+            'activeEmergencyRequests',
+            'safetyEpoch'
         ));
     }
 

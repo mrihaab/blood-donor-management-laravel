@@ -1,6 +1,7 @@
 package com.example.bloodbankapp
 
 import android.annotation.SuppressLint
+import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
@@ -16,12 +17,6 @@ import androidx.activity.OnBackPressedCallback
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
-
-    companion object {
-        // Base Hospital Portal URL (Configurable via Build Type / Remote Config)
-        const val BASE_HOSPITAL_URL = "https://bloodbank-clinical-portal.loca.lt/hospital/dashboard"
-        const val APPROVED_HOST = "bloodbank-clinical-portal.loca.lt"
-    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,9 +40,15 @@ class MainActivity : ComponentActivity() {
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         settings.userAgentString = settings.userAgentString + " BloodBankApp/1.0 HospitalNativeShell"
 
-        // Disable WebView debugging in production builds
+        // Enable Safe Browsing where supported (Android O / API 26+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.safeBrowsingEnabled = true
+        }
+
+        // Enable WebView debugging ONLY in debug builds
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(false)
+            val isDebuggable = 0 != (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)
+            WebView.setWebContentsDebuggingEnabled(isDebuggable)
         }
 
         // Cookie persistence configuration
@@ -80,8 +81,9 @@ class MainActivity : ComponentActivity() {
                     return true // Block non-HTTPS cleartext traffic
                 }
 
-                // 2. Enforce Approved Hostname
-                if (uri.host != APPROVED_HOST) {
+                // 2. Enforce Approved Hostname from BuildConfig
+                val approvedHost = BuildConfig.HOSPITAL_PORTAL_HOST
+                if (uri.host != approvedHost) {
                     return true // Block external untrusted domains
                 }
 
@@ -106,6 +108,6 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        webView.loadUrl(BASE_HOSPITAL_URL)
+        webView.loadUrl(BuildConfig.HOSPITAL_PORTAL_URL)
     }
 }

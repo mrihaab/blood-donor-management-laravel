@@ -49,13 +49,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         // Server-side audit log immutability protection
-        Activity::updating(function () {
-            throw new \LogicException('Activity log records are immutable and cannot be modified.');
-        });
+        if (class_exists(Activity::class)) {
+            Activity::updating(function () {
+                throw new \LogicException('Activity log records are immutable and cannot be modified.');
+            });
 
-        Activity::deleting(function () {
-            throw new \LogicException('Activity log records are immutable and cannot be deleted.');
-        });
+            Activity::deleting(function () {
+                throw new \LogicException('Activity log records are immutable and cannot be deleted.');
+            });
+        }
 
         // Queue Worker Failure Observability Listener
         Queue::failing(function (JobFailed $event) {

@@ -21,6 +21,9 @@ class HospitalPatientRequest extends FormRequest
             'date_of_birth' => ['required', 'date', 'before:today'],
             'blood_group_id' => ['nullable', 'exists:blood_groups,id'],
             'contact_number' => ['nullable', 'string', 'max:50'],
+            'ward_name' => ['nullable', 'string', 'max:100'],
+            'room_number' => ['nullable', 'string', 'max:50'],
+            'bed_number' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'in:active,discharged,archived'],
         ];
     }

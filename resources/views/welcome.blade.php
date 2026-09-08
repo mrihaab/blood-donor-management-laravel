@@ -49,7 +49,7 @@
                 Lifesaving Blood Bank Operations <br class="hidden sm:inline" /> & Inventory Management
             </h1>
             <p class="mx-auto mt-4 max-w-2xl text-base text-slate-600">
-                Unit-level barcode bag tracking, component preservation, 56-day donor eligibility enforcement, and real-time hospital requisitions.
+                Unit-level barcode bag tracking, component preservation, 56-day donor eligibility enforcement, and hospital requisitions.
             </p>
             <div class="mt-8 flex justify-center gap-4">
                 <a href="{{ route('register') }}" class="rounded-xl bg-red-600 px-6 py-3.5 text-base font-bold text-white shadow-md hover:bg-red-700 transition">
@@ -102,7 +102,7 @@
     <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-sm">
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p class="font-bold text-white">LifeBlood Operations Platform &copy; {{ date('Y') }}</p>
-            <p class="mt-1 text-xs">Certified Healthcare Stock Management System</p>
+            <p class="mt-1 text-xs">Healthcare Stock & Inventory Management System</p>
         </div>
     </footer>
 </body>

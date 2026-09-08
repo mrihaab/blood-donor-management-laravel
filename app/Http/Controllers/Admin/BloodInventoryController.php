@@ -71,17 +71,23 @@ class BloodInventoryController extends Controller
             'all'       => BloodUnit::count(),
         ];
 
+        $safetyEpoch = \Illuminate\Support\Facades\DB::table('ai_safety_epoch')->where('id', 1)->value('epoch_version') ?? 1;
+
+        $units = $bloodUnits;
+
         return view('admin.inventory.index', compact(
             'inventoryOverview',
             'groupedInventory',
             'bloodUnits',
+            'units',
             'bloodGroups',
             'components',
             'currentTab',
             'sourceFilter',
             'statusFilter',
             'statusCounts',
-            'perPage'
+            'perPage',
+            'safetyEpoch'
         ));
     }
 

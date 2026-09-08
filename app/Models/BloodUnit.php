@@ -11,8 +11,11 @@ class BloodUnit extends Model
 
     protected $fillable = [
         'unit_number',
+        'din',
         'blood_group_id',
+        'blood_group',
         'component_id',
+        'component_type',
         'donor_id',
         'donation_id',
         'collection_date',
@@ -20,6 +23,10 @@ class BloodUnit extends Model
         'volume_ml',
         'storage_location',
         'status',
+        'temperature_status',
+        'donation_type',
+        'donor_relation',
+        'replacement_patient_id',
     ];
 
     public function bloodGroup()

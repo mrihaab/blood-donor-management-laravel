@@ -36,6 +36,11 @@ class HospitalRequisitionRequest extends FormRequest
             'urgency' => ['required', 'string', 'in:routine,urgent,emergency'],
             'required_by' => ['nullable', 'date', 'after_or_equal:now'],
             'reason' => ['nullable', 'string', 'max:1000'],
+            'attendant_name' => ['nullable', 'string', 'max:255'],
+            'attendant_phone' => ['nullable', 'string', 'max:50'],
+            'ward_name' => ['nullable', 'string', 'max:255'],
+            'room_number' => ['nullable', 'string', 'max:100'],
+            'bed_number' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

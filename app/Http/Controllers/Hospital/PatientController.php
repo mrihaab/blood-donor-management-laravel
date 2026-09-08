@@ -47,6 +47,13 @@ class PatientController extends Controller
 
         $patient = Patient::create($validated);
 
+        // Dispatch Real-Time Admin Notification Bell Alert
+        try {
+            app(\App\Services\NotificationService::class)->notifyAdminPatientRegistered($patient, $user->hospital->name ?? 'Hospital');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Patient Registration Admin Notification skipped: " . $e->getMessage());
+        }
+
         return redirect()->route('hospital.patients.show', $patient->id)
             ->with('success', 'Patient record created successfully.');
     }

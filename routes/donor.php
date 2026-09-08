@@ -7,7 +7,7 @@ use App\Http\Controllers\BloodRequestController;
 use App\Http\Controllers\NotificationCenterController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('donor')->name('donor.')->middleware(['auth', 'verified', 'donor', 'active_status', 'role:donor'])->group(function () {
+Route::prefix('donor')->name('donor.')->middleware(['auth', 'verified', 'active_status', 'role:donor'])->group(function () {
     // Donor Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     

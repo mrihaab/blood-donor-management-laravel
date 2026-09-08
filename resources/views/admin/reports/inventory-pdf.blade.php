@@ -1,34 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Inventory Report PDF</title>
     <style>
-        body { font-family: sans-serif; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        @page {
+            margin: 15mm 15mm 15mm 15mm;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #0f172a;
+            background-color: #ffffff;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            border-b: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #991b1b;
+            margin: 0 0 4px 0;
+        }
+        .header p {
+            font-size: 9pt;
+            color: #64748b;
+            margin: 0;
+        }
+        .meta-bar {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 9.5pt;
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #334155;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8pt;
+            letter-spacing: 0.5px;
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        td {
+            border: 1px solid #e2e8f0;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 8pt;
+            font-weight: bold;
+            border-radius: 3px;
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-t: 1px solid #e2e8f0;
+            font-size: 8pt;
+            color: #94a3b8;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h2>Blood Bank Central Stock Report Certificate</h2>
-    <p>Generated on: {{ date('Y-m-d H:i:s') }}</p>
-    <p><strong>Active Available Stock:</strong> {{ $totalAvailable ?? 0 }} Bags &bull; <strong>Total Dispensed:</strong> {{ $totalDispensed ?? 0 }} Bags</p>
+    <div class="header">
+        <h1>LifeBlood Platform — Stock Inventory Report</h1>
+        <p>Central Blood Bank Inventory & Stock Summary</p>
+    </div>
+
+    <div class="meta-bar">
+        <strong>Report Generated:</strong> {{ date('Y-m-d H:i:s') }} UTC &bull;
+        <strong>Active Available Stock:</strong> {{ $totalAvailable ?? 0 }} Bags &bull;
+        <strong>Total Dispensed:</strong> {{ $totalDispensed ?? 0 }} Bags
+    </div>
+
     <table>
         <thead>
             <tr>
-                <th>Blood Group</th>
-                <th>Available Units</th>
-                <th>Donor Intake</th>
-                <th>Direct Admin Intake</th>
-                <th>Expiring Soon (7 Days)</th>
-                <th>Status</th>
+                <th style="width: 15%;">Blood Group</th>
+                <th style="width: 18%;">Available Units</th>
+                <th style="width: 16%;">Donor Intake</th>
+                <th style="width: 18%;">Direct Admin Intake</th>
+                <th style="width: 18%;">Expiring (7 Days)</th>
+                <th style="width: 15%;">Stock Status</th>
             </tr>
         </thead>
         <tbody>
             @foreach($inventory as $item)
-                <tr>
-                    <td><strong>{{ $item['blood_group'] }}</strong></td>
-                    <td>{{ $item['units_available'] }} Bags</td>
+                <tr style="page-break-inside: avoid;">
+                    <td><span class="badge">{{ $item['blood_group'] }}</span></td>
+                    <td><strong>{{ $item['units_available'] }} Bags</strong></td>
                     <td>{{ $item['donor_intake_count'] }} Bags</td>
                     <td>{{ $item['direct_intake_count'] }} Bags</td>
                     <td>{{ $item['expiring_soon'] > 0 ? $item['expiring_soon'] . ' Bag(s)' : '0 Bags' }}</td>
@@ -37,5 +120,9 @@
             @endforeach
         </tbody>
     </table>
+
+    <div class="footer">
+        Confidential — Internal Central Blood Bank Document &bull; LifeBlood Platform
+    </div>
 </body>
 </html>

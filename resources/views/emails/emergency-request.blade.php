@@ -36,7 +36,7 @@
             <a href="{{ route('donor.appointments.index') }}" class="btn">🩸 I Can Donate Now (Confirm RSVP)</a>
         </div>
         <div class="footer">
-            LifeBlood Emergency Dispatch System &bull; WHO & ISBT-128 Clinical Protocol
+            LifeBlood Emergency Dispatch System &bull; Voluntary Donor Notification
         </div>
     </div>
 </body>

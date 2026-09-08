@@ -8,22 +8,22 @@
 
 @php
     $colorMap = [
-        'red' => 'bg-red-50 text-red-700 border-red-200 icon-red-600',
-        'blue' => 'bg-blue-50 text-blue-700 border-blue-200 icon-blue-600',
-        'green' => 'bg-emerald-50 text-emerald-700 border-emerald-200 icon-emerald-600',
-        'amber' => 'bg-amber-50 text-amber-700 border-amber-200 icon-amber-600',
-        'slate' => 'bg-slate-50 text-slate-700 border-slate-200 icon-slate-600',
+        'red' => 'bg-red-50 dark:bg-rose-950/80 text-red-700 dark:text-rose-300 border border-red-200 dark:border-rose-800/80',
+        'blue' => 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80',
+        'green' => 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80',
+        'amber' => 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80',
+        'slate' => 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700',
     ];
     $badgeStyle = $colorMap[$color] ?? $colorMap['slate'];
 @endphp
 
-<div class="bg-white overflow-hidden rounded-xl border border-slate-200 p-5 shadow-sm transition hover:shadow-md">
+<div class="bg-white dark:bg-[#0c1427] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 p-5 shadow-sm transition hover:shadow-md">
     <div class="flex items-center justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ $title }}</p>
-            <h3 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">{{ $value }}</h3>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ $title }}</p>
+            <h3 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{{ $value }}</h3>
             @if($subtext)
-                <p class="mt-1 text-xs text-slate-500">{{ $subtext }}</p>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $subtext }}</p>
             @endif
         </div>
         <div class="rounded-lg p-3 {{ $badgeStyle }}">

@@ -1,32 +1,64 @@
 @extends('layouts.donor')
 
 @section('title', 'Book Appointment')
-@section('page_title', 'Book Donation Appointment')
 
 @section('content')
-<div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <form method="POST" action="{{ route('donor.appointments.store') }}" onsubmit="const b=this.querySelector('button[type=submit]'); if(b.disabled) return false; b.disabled=true; b.innerHTML='Submitting...';" class="space-y-6">
-        @csrf
+<div class="max-w-2xl mx-auto space-y-6">
 
+    <!-- Header Card -->
+    <div class="bg-white dark:bg-[#0c1427] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex items-center justify-between transition-colors">
         <div>
-            <label class="block text-sm font-medium text-gray-700">Appointment Date</label>
-            <input type="date" name="appointment_date" min="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+            <h1 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Schedule Donation Visit</h1>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">Select a convenient date, time, and blood donation center.</p>
         </div>
+        <a href="{{ route('donor.appointments.index') }}" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition border border-slate-200 dark:border-slate-700">
+            &larr; Back
+        </a>
+    </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Preferred Time</label>
-            <input type="time" name="appointment_time" value="09:00" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
-        </div>
+    <!-- Form Container -->
+    <div class="bg-white dark:bg-[#0c1427] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm transition-colors">
+        <form method="POST" action="{{ route('donor.appointments.store') }}" x-data="{ isSubmitting: false }" @submit="isSubmitting = true" class="space-y-6">
+            @csrf
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Preferred Donation Center</label>
-            <input type="text" name="location" value="Main Blood Bank Center" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
-        </div>
+            <!-- Appointment Date -->
+            <div>
+                <label for="appointment_date" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    Appointment Date <span class="text-rose-600 font-bold">*</span>
+                </label>
+                <input id="appointment_date" type="date" name="appointment_date" value="{{ old('appointment_date') }}" min="{{ date('Y-m-d') }}" required class="w-full px-4 py-2.5 rounded-xl text-xs md:text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none transition shadow-sm font-mono">
+                @error('appointment_date') <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1 block">{{ $message }}</span> @enderror
+            </div>
 
-        <div class="flex justify-end space-x-3">
-            <a href="{{ route('donor.appointments.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg text-sm">Cancel</a>
-            <button type="submit" class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg text-sm hover:bg-red-700">Confirm Booking</button>
-        </div>
-    </form>
+            <!-- Preferred Time -->
+            <div>
+                <label for="appointment_time" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    Preferred Time <span class="text-rose-600 font-bold">*</span>
+                </label>
+                <input id="appointment_time" type="time" name="appointment_time" value="{{ old('appointment_time', '09:00') }}" required class="w-full px-4 py-2.5 rounded-xl text-xs md:text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none transition shadow-sm font-mono">
+                @error('appointment_time') <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1 block">{{ $message }}</span> @enderror
+            </div>
+
+            <!-- Preferred Donation Center -->
+            <div>
+                <label for="location" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    Preferred Donation Center <span class="text-rose-600 font-bold">*</span>
+                </label>
+                <input id="location" type="text" name="location" value="{{ old('location', 'Main Blood Bank Center') }}" placeholder="e.g. Main Blood Bank Center, Regional Collection Unit" required class="w-full px-4 py-2.5 rounded-xl text-xs md:text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500 focus:outline-none transition shadow-sm">
+                @error('location') <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1 block">{{ $message }}</span> @enderror
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <a href="{{ route('donor.appointments.index') }}" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition">
+                    Cancel
+                </a>
+                <button type="submit" :disabled="isSubmitting" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs md:text-sm font-extrabold rounded-xl shadow-md transition flex items-center gap-2">
+                    <span x-text="isSubmitting ? 'Confirming...' : 'Confirm Appointment'">Confirm Appointment</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
 </div>
 @endsection

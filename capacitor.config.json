@@ -1,0 +1,15 @@
+{
+  "appId": "com.bloodbank.commandcenter",
+  "appName": "Blood Bank AI Command Center",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}
