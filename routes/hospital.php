@@ -7,7 +7,7 @@ use App\Http\Controllers\Hospital\TransfusionController;
 use App\Http\Controllers\NotificationCenterController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->prefix('hospital')->name('hospital.')->group(function () {
+Route::middleware(['auth', 'verified', 'active_status', 'role:hospital'])->prefix('hospital')->name('hospital.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Notification Feed

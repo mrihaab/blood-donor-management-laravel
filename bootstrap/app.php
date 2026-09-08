@@ -15,19 +15,22 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all reverse proxies (Render, Cloudflare, Load Balancers)
         $middleware->trustProxies(at: '*');
 
-        // Default web middleware (Inertia.js & Security Headers)
+        // Default web middleware (Inertia.js, Security Headers & History Cache Prevention)
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\PreventBackHistoryCache::class,
         ]);
 
         // Register custom middleware aliases
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'donor' => \App\Http\Middleware\DonorMiddleware::class,
-            '2fa'   => \App\Http\Middleware\EnforceTwoFactor::class,
+            'auth'          => \App\Http\Middleware\Authenticate::class,
+            'admin'         => \App\Http\Middleware\AdminMiddleware::class,
+            'donor'         => \App\Http\Middleware\DonorMiddleware::class,
+            'role'          => \App\Http\Middleware\RoleMiddleware::class,
+            'active_status' => \App\Http\Middleware\EnsureUserIsActive::class,
+            '2fa'           => \App\Http\Middleware\EnforceTwoFactor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

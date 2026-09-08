@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'admin', 'active_status', 'role:admin', '2fa'])->prefix('admin')->name('admin.')->group(function () {
     
     // Dashboard & Overview
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -78,13 +78,17 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     
     // Blood Requests Management
     Route::get('/blood-requests', [BloodRequestAdminController::class, 'index'])->name('blood_requests.index');
+    Route::get('/blood-requests/bulk-triage', [BloodRequestAdminController::class, 'bulkTriage'])->name('blood_requests.bulk_triage');
+    Route::post('/blood-requests/bulk-dispense', [BloodRequestAdminController::class, 'bulkDispense'])->name('blood_requests.bulk_dispense');
     Route::post('/blood-requests/{id}/approve', [BloodRequestAdminController::class, 'approve'])->name('blood_requests.approve');
     Route::post('/blood-requests/{id}/instant-dispense', [BloodRequestAdminController::class, 'instantDispense'])->name('blood_requests.instant_dispense');
+    Route::post('/blood-requests/{id}/dispense-universal-fallback', [BloodRequestAdminController::class, 'dispenseUniversalFallback'])->name('blood_requests.dispense_universal_fallback');
     Route::post('/blood-requests/{id}/reject', [BloodRequestAdminController::class, 'reject'])->name('blood_requests.reject');
     Route::post('/blood-requests/{id}/assign-donor', [BloodRequestAdminController::class, 'assignDonor'])->name('blood_requests.assign_donor');
     Route::post('/blood-requests/{id}/notify-donors', [BloodRequestAdminController::class, 'notifyDonors'])->name('blood_requests.notify_donors');
     Route::post('/blood-requests/{id}/fulfill', [BloodRequestAdminController::class, 'fulfill'])->name('blood_requests.fulfill');
     Route::post('/blood-requests/{id}/dispense', [BloodRequestAdminController::class, 'dispenseBlood'])->name('blood_requests.dispense');
+    Route::post('/blood-requests/{id}/report-reaction', [BloodRequestAdminController::class, 'reportReaction'])->name('blood_requests.report_reaction');
     Route::delete('/blood-requests/{id}', [BloodRequestAdminController::class, 'destroy'])->name('blood_requests.destroy');
 
     // System Notifications Feed (Live Center)
@@ -102,6 +106,7 @@ Route::middleware(['auth', 'verified', 'admin', '2fa'])->prefix('admin')->name('
     Route::get('/reports/donors', [ReportController::class, 'donorReport'])->name('reports.donors');
     Route::get('/reports/donations', [ReportController::class, 'donationReport'])->name('reports.donations');
     Route::get('/reports/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
+    Route::get('/reports/transfusion-audit', [ReportController::class, 'transfusionAudit'])->name('reports.transfusion_audit');
     Route::get('/reports/monthly-stats', [ReportController::class, 'monthlyStats'])->name('reports.monthly-stats');
     Route::get('/reports/monthly_stats', [ReportController::class, 'monthlyStats'])->name('reports.monthly_stats');
     

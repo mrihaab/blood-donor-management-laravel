@@ -15,7 +15,10 @@ class AdminMiddleware
         }
 
         if (!auth()->user()->isAdmin()) {
-            return redirect('/')->with('error', 'Admin access required');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Admin access required.'], 403);
+            }
+            abort(403, 'Admin access required.');
         }
 
         return $next($request);

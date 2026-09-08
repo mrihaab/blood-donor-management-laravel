@@ -42,9 +42,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => 'active',
-            'email_verified_at' => now(),
         ]);
-        $user->email_verified_at = now();
         $user->role = 'donor';
         $user->save();
 
@@ -77,6 +75,7 @@ class RegisteredUserController extends Controller
 
         try {
             event(new Registered($user));
+            app(\App\Services\NotificationService::class)->notifyAdminDonorRegistered($user);
         } catch (\Throwable $e) {
             Log::warning('Email verification notification skipped on registration: ' . $e->getMessage());
         }

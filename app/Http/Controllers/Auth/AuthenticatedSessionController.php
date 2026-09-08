@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,28 +26,27 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request with role-based redirection.
+     * Handle an incoming authentication request with rate-limiting and role-based redirection.
      */
-    public function store(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function store(LoginRequest $request): \Symfony\Component\HttpFoundation\Response
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            return back()->withErrors([
-                'email' => 'Invalid credentials',
-            ]);
-        }
+        $request->authenticate();
 
         $request->session()->regenerate();
 
         $user = Auth::user();
 
-        // 🔁 Role-based redirect (Inertia::location triggers full browser page load to Blade views)
+        Log::info('Successful user authentication', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'ip' => $request->ip(),
+        ]);
+
+        // Role-based redirect (Inertia::location triggers full browser page load to Blade views)
         if ($user->role === 'admin') {
             return Inertia::location(route('admin.dashboard'));
+        } elseif ($user->role === 'hospital') {
+            return Inertia::location(route('hospital.dashboard'));
         } elseif ($user->role === 'donor') {
             return Inertia::location(route('donor.dashboard'));
         }
@@ -55,15 +56,19 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Destroy an authenticated session.
+     * Destroy an authenticated session securely.
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $userId = Auth::id();
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        Log::info('User logged out successfully', ['user_id' => $userId]);
+
+        return redirect()->route('login');
     }
 }

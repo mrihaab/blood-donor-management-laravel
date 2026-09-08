@@ -49,6 +49,20 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Verify account active status immediately upon credential check
+        $user = Auth::user();
+        if ($user && $user->status !== 'active') {
+            Auth::guard('web')->logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Your account is inactive or blocked. Please contact support.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
