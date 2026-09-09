@@ -1,25 +1,51 @@
-﻿import { tokenStorage } from "../storage/tokenStorage";
+import { tokenStorage } from "../storage/tokenStorage";
 import { queryClient } from "../api/queryClient";
 
-let sessionExpiryHandler: (() => Promise<void>) | null = null;
-let isHandlingExpiry = false;
+type ExpiryHandler = () => void | Promise<void>;
 
-export function registerSessionExpiryHandler(handler: () => Promise<void>) {
-  sessionExpiryHandler = handler;
+let handlers: Set<ExpiryHandler> = new Set();
+let inFlightExpiryPromise: Promise<void> | null = null;
+let activeSessionId: string | null = null;
+
+export function notifySessionStarted(sessionId?: string): void {
+  activeSessionId = sessionId || `sess_${Date.now()}_${Math.random()}`;
+  inFlightExpiryPromise = null;
 }
 
-export async function triggerSessionExpiry(): Promise<void> {
-  if (isHandlingExpiry) {
-    return;
+export function registerSessionExpiryHandler(handler: ExpiryHandler): () => void {
+  handlers.add(handler);
+  return () => {
+    handlers.delete(handler);
+  };
+}
+
+export function triggerSessionExpiry(): Promise<void> {
+  if (inFlightExpiryPromise) {
+    return inFlightExpiryPromise;
   }
-  isHandlingExpiry = true;
-  try {
-    await tokenStorage.clearToken();
-    queryClient.clear();
-    if (sessionExpiryHandler) {
-      await sessionExpiryHandler();
+
+  inFlightExpiryPromise = (async () => {
+    try {
+      await tokenStorage.clearToken().catch(() => {});
+    } finally {
+      try {
+        queryClient.clear();
+      } catch (e) {}
+
+      const registeredHandlers = Array.from(handlers);
+      for (const handler of registeredHandlers) {
+        try {
+          await handler();
+        } catch (e) {}
+      }
     }
-  } finally {
-    isHandlingExpiry = false;
-  }
+  })();
+
+  return inFlightExpiryPromise;
+}
+
+export function resetSessionExpiryCoordinatorForTests(): void {
+  handlers.clear();
+  inFlightExpiryPromise = null;
+  activeSessionId = null;
 }

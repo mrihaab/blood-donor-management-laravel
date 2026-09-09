@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../auth/AuthContext";
@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator();
 export const AppNavigator: React.FC = () => {
   const { authState } = useAuth();
 
-  if (authState === "bootstrapping" || authState === "provisional_restoration") {
+  if (authState === "bootstrapping") {
     return <SplashScreen />;
   }
 
