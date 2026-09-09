@@ -1,10 +1,7 @@
 ﻿import axios, { AxiosError } from "axios";
 import { envConfig } from "../config/env";
 import { tokenStorage } from "../storage/tokenStorage";
-import { queryClient } from "./queryClient";
-import { resetToLogin } from "../navigation/navigationRef";
-
-let isHandlingExpiry = false;
+import { triggerSessionExpiry } from "../auth/sessionExpiryCoordinator";
 
 export const apiClient = axios.create({
   baseURL: envConfig.apiUrl,
@@ -36,17 +33,8 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (status === 401 && !isHandlingExpiry) {
-      isHandlingExpiry = true;
-      try {
-        await tokenStorage.clearToken();
-        queryClient.clear();
-        resetToLogin();
-      } finally {
-        setTimeout(() => {
-          isHandlingExpiry = false;
-        }, 100);
-      }
+    if (status === 401) {
+      await triggerSessionExpiry();
     }
 
     return Promise.reject(error);

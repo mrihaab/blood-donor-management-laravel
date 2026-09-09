@@ -5,19 +5,18 @@ import { useAuth } from "../auth/AuthContext";
 import { SplashScreen } from "../screens/SplashScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
-import { navigationRef } from "./navigationRef";
 
 const Stack = createNativeStackNavigator();
 
 export const AppNavigator: React.FC = () => {
   const { authState } = useAuth();
 
-  if (authState === "bootstrapping") {
+  if (authState === "bootstrapping" || authState === "provisional_restoration") {
     return <SplashScreen />;
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {authState === "authenticated" ? (
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
