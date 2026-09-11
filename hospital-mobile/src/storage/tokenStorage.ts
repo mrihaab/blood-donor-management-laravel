@@ -6,7 +6,7 @@ export const tokenStorage = {
   async getToken(): Promise<string | null> {
     try {
       return await SecureStore.getItemAsync(TOKEN_KEY);
-    } catch (error) {
+    } catch {
       return null;
     }
   },
@@ -15,7 +15,7 @@ export const tokenStorage = {
     try {
       await SecureStore.setItemAsync(TOKEN_KEY, token);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -24,7 +24,7 @@ export const tokenStorage = {
     try {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

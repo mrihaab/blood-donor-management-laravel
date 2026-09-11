@@ -22,7 +22,7 @@ function validateTokenWithTimeout(
   timeoutMs = VALIDATION_TIMEOUT_MS
 ): Promise<boolean> {
   return new Promise((resolve) => {
-    let timer: any = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let finished = false;
 
     timer = setTimeout(() => {
@@ -63,14 +63,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{
   children: React.ReactNode;
   sessionValidator?: SessionValidator;
-}> = ({ children, sessionValidator = defaultSessionValidator }) => {
+  validationTimeoutMs?: number;
+}> = ({ children, sessionValidator = defaultSessionValidator, validationTimeoutMs = VALIDATION_TIMEOUT_MS }) => {
   const [authState, setAuthState] = useState<AuthState>("bootstrapping");
   const [token, setToken] = useState<string | null>(null);
 
   const setUnauthenticated = useCallback(async () => {
     try {
       await tokenStorage.clearToken();
-    } catch (e) {
+    } catch {
       // In-memory auth state clears even if SecureStore deletion fails
     } finally {
       setToken(null);
@@ -94,7 +95,10 @@ export const AuthProvider: React.FC<{
     let isMounted = true;
 
     const unregister = registerSessionExpiryHandler(async () => {
-      await setUnauthenticated();
+      if (isMounted) {
+        setToken(null);
+        setAuthState("unauthenticated");
+      }
     });
 
     const bootstrap = async () => {
@@ -108,13 +112,13 @@ export const AuthProvider: React.FC<{
           return;
         }
 
-        const isValid = await validateTokenWithTimeout(sessionValidator, storedToken);
+        const isValid = await validateTokenWithTimeout(sessionValidator, storedToken, validationTimeoutMs);
+        if (!isMounted) return;
+
         if (isValid) {
-          if (isMounted) {
-            setToken(storedToken);
-            setAuthState("authenticated");
-            notifySessionStarted(storedToken);
-          }
+          setToken(storedToken);
+          setAuthState("authenticated");
+          notifySessionStarted(storedToken);
         } else {
           await tokenStorage.clearToken().catch(() => {});
           if (isMounted) {
@@ -122,7 +126,7 @@ export const AuthProvider: React.FC<{
             setAuthState("unauthenticated");
           }
         }
-      } catch (error) {
+      } catch {
         await tokenStorage.clearToken().catch(() => {});
         if (isMounted) {
           setToken(null);
@@ -137,7 +141,7 @@ export const AuthProvider: React.FC<{
       isMounted = false;
       unregister();
     };
-  }, [sessionValidator, setUnauthenticated]);
+  }, [sessionValidator, validationTimeoutMs]);
 
   return (
     <AuthContext.Provider value={{ authState, token, setAuthenticated, setUnauthenticated }}>

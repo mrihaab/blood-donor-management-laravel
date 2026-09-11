@@ -7,9 +7,14 @@ let handlers: Set<ExpiryHandler> = new Set();
 let inFlightExpiryPromise: Promise<void> | null = null;
 let activeSessionId: string | null = null;
 
-export function notifySessionStarted(sessionId?: string): void {
+export function notifySessionStarted(sessionId?: string): string {
   activeSessionId = sessionId || `sess_${Date.now()}_${Math.random()}`;
   inFlightExpiryPromise = null;
+  return activeSessionId;
+}
+
+export function getActiveSessionId(): string | null {
+  return activeSessionId;
 }
 
 export function registerSessionExpiryHandler(handler: ExpiryHandler): () => void {
@@ -19,7 +24,12 @@ export function registerSessionExpiryHandler(handler: ExpiryHandler): () => void
   };
 }
 
-export function triggerSessionExpiry(): Promise<void> {
+export function triggerSessionExpiry(sessionId?: string): Promise<void> {
+  // If a session ID is passed and it doesn't match the current active session, ignore late 401
+  if (sessionId && activeSessionId && sessionId !== activeSessionId) {
+    return Promise.resolve();
+  }
+
   if (inFlightExpiryPromise) {
     return inFlightExpiryPromise;
   }
@@ -30,13 +40,13 @@ export function triggerSessionExpiry(): Promise<void> {
     } finally {
       try {
         queryClient.clear();
-      } catch (e) {}
+      } catch {}
 
       const registeredHandlers = Array.from(handlers);
       for (const handler of registeredHandlers) {
         try {
           await handler();
-        } catch (e) {}
+        } catch {}
       }
     }
   })();

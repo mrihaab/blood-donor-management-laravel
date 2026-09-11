@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { envConfig } from "../config/env";
 import { tokenStorage } from "../storage/tokenStorage";
-import { triggerSessionExpiry } from "../auth/sessionExpiryCoordinator";
+import { triggerSessionExpiry, getActiveSessionId } from "../auth/sessionExpiryCoordinator";
 
 // Public API client: no Authorization header attached, no session expiry on 401
 export const publicApiClient = axios.create({
@@ -29,6 +29,7 @@ authenticatedApiClient.interceptors.request.use(
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+      (config as any)._sessionId = getActiveSessionId();
     }
     return config;
   },
@@ -40,7 +41,8 @@ authenticatedApiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error.response?.status;
     if (status === 401) {
-      await triggerSessionExpiry();
+      const requestSessionId = (error.config as any)?._sessionId;
+      await triggerSessionExpiry(requestSessionId);
     }
     return Promise.reject(error);
   }

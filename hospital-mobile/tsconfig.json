@@ -3,9 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "typeRoots": ["./node_modules/@types"],
-    "types": ["react", "react-native", "jest"],
+    "types": ["jest"],
     "paths": {
       "@/*": ["src/*"]
     }

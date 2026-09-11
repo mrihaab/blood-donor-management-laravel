@@ -12,6 +12,7 @@ jest.mock("../storage/tokenStorage", () => ({
 
 jest.mock("../auth/sessionExpiryCoordinator", () => ({
   triggerSessionExpiry: jest.fn().mockResolvedValue(undefined),
+  getActiveSessionId: jest.fn().mockReturnValue("test_session_id"),
 }));
 
 describe("apiClient Dual Instance Unit Tests", () => {

@@ -1,4 +1,4 @@
-﻿export interface EnvConfig {
+export interface EnvConfig {
   environment: "development" | "staging" | "production";
   apiUrl: string;
   isHttpsOnly: boolean;

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { colors, spacing } from "../theme";
 
