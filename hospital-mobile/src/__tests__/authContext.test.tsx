@@ -37,7 +37,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
   test("1. No token bootstraps directly to unauthenticated state", async () => {
     (tokenStorage.getToken as jest.Mock).mockResolvedValue(null);
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider validationTimeoutMs={100}>
         <TestConsumer />
       </AuthProvider>
@@ -54,7 +54,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       validateToken: jest.fn().mockResolvedValue(true),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <TestConsumer />
       </AuthProvider>
@@ -72,7 +72,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       validateToken: jest.fn().mockResolvedValue(false),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <TestConsumer />
       </AuthProvider>
@@ -90,7 +90,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       validateToken: jest.fn().mockRejectedValue(new Error("Network validation error")),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <TestConsumer />
       </AuthProvider>
@@ -108,7 +108,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       validateToken: () => new Promise(() => {}),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator} validationTimeoutMs={100}>
         <TestConsumer />
       </AuthProvider>
@@ -138,7 +138,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       return <Text testID="auth-state">{auth.authState}</Text>;
     };
 
-    render(
+    await render(
       <AuthProvider>
         <Grabber />
       </AuthProvider>
@@ -167,7 +167,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
       validateToken: jest.fn().mockResolvedValue(true),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <TestConsumer />
       </AuthProvider>
@@ -196,7 +196,7 @@ describe("AuthContext & AuthProvider Unit Tests", () => {
         }),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <TestConsumer />
       </AuthProvider>

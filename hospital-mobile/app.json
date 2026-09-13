@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "hospital-mobile",
+    "name": "Hospital Mobile",
     "slug": "hospital-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hospital.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,10 +17,14 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.anonymous.hospitalmobile"
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hospital.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

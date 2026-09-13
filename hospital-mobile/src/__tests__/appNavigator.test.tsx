@@ -17,10 +17,10 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     jest.clearAllMocks();
   });
 
-  test("1. Bootstrapping state displays SplashScreen with no protected Dashboard flash", () => {
+  test("1. Bootstrapping state displays SplashScreen with no protected Dashboard flash", async () => {
     (tokenStorage.getToken as jest.Mock).mockReturnValue(new Promise(() => {})); // pending promise
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>
@@ -33,7 +33,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
   test("2. Unauthenticated state displays LoginScreen and no Dashboard", async () => {
     (tokenStorage.getToken as jest.Mock).mockResolvedValue(null);
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>
@@ -51,7 +51,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
       validateToken: jest.fn().mockResolvedValue(true),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <AppNavigator />
       </AuthProvider>
@@ -69,7 +69,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
       validateToken: jest.fn().mockResolvedValue(true),
     };
 
-    const screen = render(
+    const screen = await render(
       <AuthProvider sessionValidator={mockValidator}>
         <AppNavigator />
       </AuthProvider>
