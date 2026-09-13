@@ -1,8 +1,9 @@
 import React from "react";
-import { render, waitFor, fireEvent } from "@testing-library/react-native";
+import { render, waitFor, fireEvent, act } from "@testing-library/react-native";
 import { AppNavigator } from "../navigation/AppNavigator";
 import { AuthProvider, SessionValidator } from "../auth/AuthContext";
 import { tokenStorage } from "../storage/tokenStorage";
+import { logoutApi } from "../api/authApi";
 
 jest.mock("../storage/tokenStorage", () => ({
   tokenStorage: {
@@ -12,9 +13,22 @@ jest.mock("../storage/tokenStorage", () => ({
   },
 }));
 
+jest.mock("../api/authApi", () => {
+  const original = jest.requireActual("../api/authApi");
+  return {
+    ...original,
+    loginApi: jest.fn(),
+    getMeApi: jest.fn(),
+    logoutApi: jest.fn(),
+  };
+});
+
 describe("AppNavigator Conditional Navigation Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (tokenStorage.clearToken as jest.Mock).mockResolvedValue(true);
+    (tokenStorage.setToken as jest.Mock).mockResolvedValue(true);
+    (logoutApi as jest.Mock).mockResolvedValue({ message: "Logged out" });
   });
 
   test("1. Bootstrapping state displays SplashScreen with no protected Dashboard flash", async () => {
@@ -40,7 +54,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Clinical Operations Portal")).toBeTruthy();
+      expect(screen.getByText("Hospital Operations Portal")).toBeTruthy();
     });
     expect(screen.queryByText("Hospital Dashboard")).toBeNull();
   });
@@ -60,7 +74,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     await waitFor(() => {
       expect(screen.getByText("Hospital Dashboard")).toBeTruthy();
     });
-    expect(screen.queryByText("Clinical Operations Portal")).toBeNull();
+    expect(screen.queryByText("Hospital Operations Portal")).toBeNull();
   });
 
   test("4. Logout removes Dashboard from navigation stack completely (Android Back protection)", async () => {
@@ -79,10 +93,12 @@ describe("AppNavigator Conditional Navigation Tests", () => {
       expect(screen.getByText("Hospital Dashboard")).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByText("Logout This Device"));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("logout-button"));
+    });
 
     await waitFor(() => {
-      expect(screen.getByText("Clinical Operations Portal")).toBeTruthy();
+      expect(screen.getByText("Hospital Operations Portal")).toBeTruthy();
     });
 
     // Verify Dashboard is completely unmounted and not present in tree

@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { tokenStorage } from "../storage/tokenStorage";
 import { registerSessionExpiryHandler, notifySessionStarted } from "./sessionExpiryCoordinator";
+import {
+  UserProfile,
+  loginApi,
+  getMeApi,
+  logoutApi,
+  logoutAllApi,
+  getDeviceName,
+} from "../api/authApi";
+import axios from "axios";
 
 export type AuthState = "bootstrapping" | "authenticated" | "unauthenticated";
 
@@ -8,52 +17,15 @@ export interface SessionValidator {
   validateToken: (token: string) => Promise<boolean>;
 }
 
-export const defaultSessionValidator: SessionValidator = {
-  validateToken: async (_token: string) => {
-    return false;
-  },
-};
-
-const VALIDATION_TIMEOUT_MS = 5000;
-
-function validateTokenWithTimeout(
-  validator: SessionValidator,
-  token: string,
-  timeoutMs = VALIDATION_TIMEOUT_MS
-): Promise<boolean> {
-  return new Promise((resolve) => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let finished = false;
-
-    timer = setTimeout(() => {
-      if (!finished) {
-        finished = true;
-        resolve(false);
-      }
-    }, timeoutMs);
-
-    validator
-      .validateToken(token)
-      .then((res) => {
-        if (!finished) {
-          finished = true;
-          if (timer) clearTimeout(timer);
-          resolve(res);
-        }
-      })
-      .catch(() => {
-        if (!finished) {
-          finished = true;
-          if (timer) clearTimeout(timer);
-          resolve(false);
-        }
-      });
-  });
-}
-
 interface AuthContextType {
   authState: AuthState;
   token: string | null;
+  user: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  logoutAll?: () => Promise<void>;
   setAuthenticated: (token: string) => Promise<void>;
   setUnauthenticated: () => Promise<void>;
 }
@@ -64,17 +36,22 @@ export const AuthProvider: React.FC<{
   children: React.ReactNode;
   sessionValidator?: SessionValidator;
   validationTimeoutMs?: number;
-}> = ({ children, sessionValidator = defaultSessionValidator, validationTimeoutMs = VALIDATION_TIMEOUT_MS }) => {
+}> = ({ children, sessionValidator, validationTimeoutMs = 5000 }) => {
   const [authState, setAuthState] = useState<AuthState>("bootstrapping");
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  const isLoggingIn = useRef(false);
+  const isLoggingOut = useRef(false);
 
   const setUnauthenticated = useCallback(async () => {
     try {
       await tokenStorage.clearToken();
     } catch {
-      // In-memory auth state clears even if SecureStore deletion fails
+      // Ignore deletion failure when clearing memory state
     } finally {
       setToken(null);
+      setUser(null);
       setAuthState("unauthenticated");
     }
   }, []);
@@ -83,6 +60,7 @@ export const AuthProvider: React.FC<{
     const success = await tokenStorage.setToken(newToken);
     if (!success) {
       setToken(null);
+      setUser(null);
       setAuthState("unauthenticated");
       throw new Error("SecureStore persistence failed");
     }
@@ -91,12 +69,94 @@ export const AuthProvider: React.FC<{
     notifySessionStarted(newToken);
   }, []);
 
+  const login = useCallback(
+    async (email: string, password: string): Promise<void> => {
+      if (isLoggingIn.current) {
+        return;
+      }
+      isLoggingIn.current = true;
+
+      try {
+        const deviceName = getDeviceName();
+        const response = await loginApi(email, password, deviceName);
+
+        const newToken = response.token;
+        const newUser = response.user;
+
+        const success = await tokenStorage.setToken(newToken);
+        if (!success) {
+          try {
+            await logoutApi();
+          } catch {
+            // Best effort revocation
+          }
+          setToken(null);
+          setUser(null);
+          setAuthState("unauthenticated");
+          throw new Error("SecureStore persistence failed");
+        }
+
+        setToken(newToken);
+        setUser(newUser);
+        setAuthState("authenticated");
+        notifySessionStarted(newToken);
+      } catch (err) {
+        setToken(null);
+        setUser(null);
+        setAuthState("unauthenticated");
+        throw err;
+      } finally {
+        isLoggingIn.current = false;
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async (): Promise<void> => {
+    if (isLoggingOut.current) {
+      return;
+    }
+    isLoggingOut.current = true;
+
+    try {
+      try {
+        await logoutApi();
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          // Token already revoked on server, proceed to clear local session
+        } else {
+          // Network failure or 5xx: preserve local session and rethrow
+          throw err;
+        }
+      }
+
+      await tokenStorage.clearToken().catch(() => {});
+      setToken(null);
+      setUser(null);
+      setAuthState("unauthenticated");
+    } finally {
+      isLoggingOut.current = false;
+    }
+  }, []);
+
+  const logoutAll = useCallback(async (): Promise<void> => {
+    try {
+      await logoutAllApi().catch(() => {});
+    } finally {
+      await tokenStorage.clearToken().catch(() => {});
+      setToken(null);
+      setUser(null);
+      setAuthState("unauthenticated");
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     const unregister = registerSessionExpiryHandler(async () => {
       if (isMounted) {
         setToken(null);
+        setUser(null);
         setAuthState("unauthenticated");
       }
     });
@@ -107,29 +167,74 @@ export const AuthProvider: React.FC<{
         if (!storedToken) {
           if (isMounted) {
             setToken(null);
+            setUser(null);
             setAuthState("unauthenticated");
           }
           return;
         }
 
-        const isValid = await validateTokenWithTimeout(sessionValidator, storedToken, validationTimeoutMs);
-        if (!isMounted) return;
+        if (sessionValidator) {
+          let finished = false;
+          const timer = setTimeout(() => {
+            if (!finished && isMounted) {
+              finished = true;
+              tokenStorage.clearToken().catch(() => {});
+              setToken(null);
+              setUser(null);
+              setAuthState("unauthenticated");
+            }
+          }, validationTimeoutMs);
 
-        if (isValid) {
-          setToken(storedToken);
-          setAuthState("authenticated");
-          notifySessionStarted(storedToken);
-        } else {
-          await tokenStorage.clearToken().catch(() => {});
-          if (isMounted) {
+          try {
+            const isValid = await sessionValidator.validateToken(storedToken);
+            finished = true;
+            clearTimeout(timer);
+            if (!isMounted) return;
+
+            if (isValid) {
+              setToken(storedToken);
+              setAuthState("authenticated");
+              notifySessionStarted(storedToken);
+            } else {
+              await tokenStorage.clearToken().catch(() => {});
+              setToken(null);
+              setUser(null);
+              setAuthState("unauthenticated");
+            }
+          } catch {
+            finished = true;
+            clearTimeout(timer);
+            if (!isMounted) return;
+            await tokenStorage.clearToken().catch(() => {});
             setToken(null);
+            setUser(null);
             setAuthState("unauthenticated");
           }
+          return;
+        }
+
+        try {
+          const meRes = await getMeApi();
+          if (!isMounted) return;
+
+          setToken(storedToken);
+          setUser(meRes.user);
+          setAuthState("authenticated");
+          notifySessionStarted(storedToken);
+        } catch (meError) {
+          if (!isMounted) return;
+
+          if (axios.isAxiosError(meError) && meError.response?.status === 401) {
+            await tokenStorage.clearToken().catch(() => {});
+          }
+          setToken(null);
+          setUser(null);
+          setAuthState("unauthenticated");
         }
       } catch {
-        await tokenStorage.clearToken().catch(() => {});
         if (isMounted) {
           setToken(null);
+          setUser(null);
           setAuthState("unauthenticated");
         }
       }
@@ -144,7 +249,20 @@ export const AuthProvider: React.FC<{
   }, [sessionValidator, validationTimeoutMs]);
 
   return (
-    <AuthContext.Provider value={{ authState, token, setAuthenticated, setUnauthenticated }}>
+    <AuthContext.Provider
+      value={{
+        authState,
+        token,
+        user,
+        isLoading: authState === "bootstrapping",
+        isAuthenticated: authState === "authenticated",
+        login,
+        logout,
+        logoutAll,
+        setAuthenticated,
+        setUnauthenticated,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
