@@ -9,6 +9,7 @@ import {
   logoutAllApi,
   getDeviceName,
 } from "../api/authApi";
+import { queryClient } from "../api/queryClient";
 import axios from "axios";
 
 export type AuthState = "bootstrapping" | "authenticated" | "unauthenticated";
@@ -50,6 +51,7 @@ export const AuthProvider: React.FC<{
     } catch {
       // Ignore deletion failure when clearing memory state
     } finally {
+      queryClient.clear();
       setToken(null);
       setUser(null);
       setAuthState("unauthenticated");
@@ -59,6 +61,7 @@ export const AuthProvider: React.FC<{
   const setAuthenticated = useCallback(async (newToken: string) => {
     const success = await tokenStorage.setToken(newToken);
     if (!success) {
+      queryClient.clear();
       setToken(null);
       setUser(null);
       setAuthState("unauthenticated");
@@ -90,6 +93,7 @@ export const AuthProvider: React.FC<{
           } catch {
             // Best effort revocation
           }
+          queryClient.clear();
           setToken(null);
           setUser(null);
           setAuthState("unauthenticated");
@@ -101,6 +105,7 @@ export const AuthProvider: React.FC<{
         setAuthState("authenticated");
         notifySessionStarted(newToken);
       } catch (err) {
+        queryClient.clear();
         setToken(null);
         setUser(null);
         setAuthState("unauthenticated");
@@ -131,6 +136,7 @@ export const AuthProvider: React.FC<{
       }
 
       await tokenStorage.clearToken().catch(() => {});
+      queryClient.clear();
       setToken(null);
       setUser(null);
       setAuthState("unauthenticated");
@@ -144,6 +150,7 @@ export const AuthProvider: React.FC<{
       await logoutAllApi().catch(() => {});
     } finally {
       await tokenStorage.clearToken().catch(() => {});
+      queryClient.clear();
       setToken(null);
       setUser(null);
       setAuthState("unauthenticated");
@@ -155,6 +162,7 @@ export const AuthProvider: React.FC<{
 
     const unregister = registerSessionExpiryHandler(async () => {
       if (isMounted) {
+        queryClient.clear();
         setToken(null);
         setUser(null);
         setAuthState("unauthenticated");

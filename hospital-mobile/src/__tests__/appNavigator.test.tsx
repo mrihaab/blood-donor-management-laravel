@@ -23,6 +23,33 @@ jest.mock("../api/authApi", () => {
   };
 });
 
+jest.mock("../api/useDashboard", () => ({
+  useDashboard: jest.fn().mockReturnValue({
+    data: {
+      hospital: {
+        id: 99,
+        name: "St. Jude Memorial",
+        license_number: "LIC-998877",
+        city: "Dhaka",
+        status: "active",
+      },
+      kpis: {
+        total_patients: 10,
+        total_requisitions: 5,
+        pending_requisitions: 2,
+        approved_requisitions: 2,
+        dispensed_requisitions: 1,
+      },
+      recent_requisitions: [],
+    },
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: jest.fn(),
+    isRefetching: false,
+  }),
+}));
+
 describe("AppNavigator Conditional Navigation Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -72,7 +99,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Hospital Dashboard")).toBeTruthy();
+      expect(screen.getByTestId("dashboard-screen")).toBeTruthy();
     });
     expect(screen.queryByText("Hospital Operations Portal")).toBeNull();
   });
@@ -90,7 +117,7 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Hospital Dashboard")).toBeTruthy();
+      expect(screen.getByTestId("dashboard-screen")).toBeTruthy();
     });
 
     await act(async () => {
@@ -102,6 +129,6 @@ describe("AppNavigator Conditional Navigation Tests", () => {
     });
 
     // Verify Dashboard is completely unmounted and not present in tree
-    expect(screen.queryByText("Hospital Dashboard")).toBeNull();
+    expect(screen.queryByTestId("dashboard-screen")).toBeNull();
   });
 });
