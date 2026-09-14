@@ -5,7 +5,7 @@ namespace App\Http\Resources\Api\V1\Hospital;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PatientResource extends JsonResource
+class PatientListResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,19 +14,11 @@ class PatientResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $dob = $this->date_of_birth;
-        $dobString = null;
-        if ($dob) {
-            $dobString = is_string($dob) ? substr($dob, 0, 10) : $dob->format("Y-m-d");
-        }
-
         return [
             "id" => $this->id,
-            "name" => $this->name,
             "mrn" => $this->mrn,
+            "name" => $this->name,
             "gender" => $this->gender,
-            "date_of_birth" => $dobString,
-            "contact_number" => $this->contact_number,
             "status" => $this->status,
             "ward_name" => $this->ward_name,
             "room_number" => $this->room_number,
@@ -38,7 +30,6 @@ class PatientResource extends JsonResource
                 ] : null;
             }),
             "created_at" => $this->created_at?->toISOString(),
-            "updated_at" => $this->updated_at?->toISOString(),
         ];
     }
 }

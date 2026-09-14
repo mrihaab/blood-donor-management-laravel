@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Hospital;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Hospital\HospitalPatientApiRequest;
+use App\Http\Requests\Api\V1\Hospital\StoreHospitalPatientRequest;
+use App\Http\Requests\Api\V1\Hospital\UpdateHospitalPatientRequest;
 use App\Http\Resources\Api\V1\Hospital\PatientDetailResource;
-use App\Http\Resources\Api\V1\Hospital\PatientResource;
+use App\Http\Resources\Api\V1\Hospital\PatientListResource;
 use App\Models\Patient;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -23,9 +24,7 @@ class HospitalPatientController extends Controller
 
         $request->validate([
             "search" => ["nullable", "string", "max:100"],
-            "q" => ["nullable", "string", "max:100"],
             "status" => ["nullable", "string", "in:active,discharged,archived"],
-            "blood_group_id" => ["nullable", "integer", "exists:blood_groups,id"],
             "page" => ["nullable", "integer", "min:1"],
             "per_page" => ["nullable", "integer", "min:1", "max:50"],
         ]);
@@ -34,20 +33,25 @@ class HospitalPatientController extends Controller
             ->where("hospital_id", $hospitalId)
             ->with("bloodGroup");
 
-        $search = $request->input("search", $request->input("q"));
+        $search = $request->input("search");
+        if ($search !== null) {
+            $search = trim($search);
+        }
         if ($search !== null && $search !== "") {
-            $query->where(function ($q) use ($search) {
-                $q->where("name", "like", "%{$search}%")
-                  ->orWhere("mrn", "like", "%{$search}%");
+            $escapedSearch = str_replace(
+                ["!", "%", "_"],
+                ["!!", "!%", "!_"],
+                $search
+            );
+            $searchTerm = "%{$escapedSearch}%";
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw("name LIKE ? ESCAPE '!'", [$searchTerm])
+                  ->orWhereRaw("mrn LIKE ? ESCAPE '!'", [$searchTerm]);
             });
         }
 
         if ($request->filled("status")) {
             $query->where("status", $request->input("status"));
-        }
-
-        if ($request->filled("blood_group_id")) {
-            $query->where("blood_group_id", $request->input("blood_group_id"));
         }
 
         $perPage = (int) $request->input("per_page", 15);
@@ -56,18 +60,12 @@ class HospitalPatientController extends Controller
             ->paginate($perPage);
 
         return response()->json([
-            "data" => PatientResource::collection($patients),
+            "data" => PatientListResource::collection($patients),
             "meta" => [
                 "current_page" => $patients->currentPage(),
                 "last_page" => $patients->lastPage(),
                 "per_page" => $patients->perPage(),
                 "total" => $patients->total(),
-            ],
-            "links" => [
-                "first" => $patients->url(1),
-                "last" => $patients->url($patients->lastPage()),
-                "prev" => $patients->previousPageUrl(),
-                "next" => $patients->nextPageUrl(),
             ],
         ]);
     }
@@ -75,48 +73,58 @@ class HospitalPatientController extends Controller
     /**
      * Store a newly created patient for the authenticated hospital.
      */
-    public function store(HospitalPatientApiRequest $request): JsonResponse
+    public function store(StoreHospitalPatientRequest $request): JsonResponse
     {
-        $user = $request->user();
+        $hospitalId = $request->user()->hospital_id;
         $validated = $request->validated();
-        $validated["hospital_id"] = $user->hospital_id;
-
-        if (empty($validated["status"])) {
-            $validated["status"] = "active";
-        }
+        $validated["hospital_id"] = $hospitalId;
+        $validated["status"] = "active";
 
         $patient = Patient::create($validated);
-        $patient->load("bloodGroup");
+        $patient->load([
+            "bloodGroup",
+            "bloodRequests" => function ($query) use ($hospitalId) {
+                $query->where("hospital_id", $hospitalId)
+                      ->orderByDesc("created_at")
+                      ->orderByDesc("id")
+                      ->limit(10);
+            },
+        ]);
 
-        // Dispatch real-time admin alert notification
         try {
             app(NotificationService::class)->notifyAdminPatientRegistered(
                 $patient,
-                $user->hospital->name ?? "Hospital"
+                $request->user()->hospital->name ?: "Hospital"
             );
         } catch (\Throwable $e) {
-            Log::warning("API Patient Registration Admin Notification skipped: " . $e->getMessage());
+            Log::warning("Hospital patient registration notification failed.", [
+                "exception" => $e::class,
+            ]);
         }
 
         return response()->json([
-            "data" => new PatientResource($patient),
+            "data" => new PatientDetailResource($patient),
         ], 201);
     }
 
     /**
      * Display the specified patient detail.
-     * MANDATORY SECURITY RULE: Must use scoped query with findOrFail to return non-enumerating 404 for cross-hospital requests.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
+        $hospitalId = $request->user()->hospital_id;
+
         $patient = Patient::query()
-            ->where("hospital_id", $request->user()->hospital_id)
+            ->where("hospital_id", $hospitalId)
             ->findOrFail($id);
 
         $patient->load([
             "bloodGroup",
-            "bloodRequests" => function ($query) {
-                $query->orderByDesc("created_at")->orderByDesc("id")->limit(10);
+            "bloodRequests" => function ($query) use ($hospitalId) {
+                $query->where("hospital_id", $hospitalId)
+                      ->orderByDesc("created_at")
+                      ->orderByDesc("id")
+                      ->limit(10);
             },
         ]);
 
@@ -127,21 +135,29 @@ class HospitalPatientController extends Controller
 
     /**
      * Update the specified patient.
-     * MANDATORY SECURITY RULE: Must use scoped query with findOrFail to return non-enumerating 404 for cross-hospital requests.
      */
-    public function update(HospitalPatientApiRequest $request, int $id): JsonResponse
+    public function update(UpdateHospitalPatientRequest $request, $id): JsonResponse
     {
+        $hospitalId = $request->user()->hospital_id;
+
         $patient = Patient::query()
-            ->where("hospital_id", $request->user()->hospital_id)
+            ->where("hospital_id", $hospitalId)
             ->findOrFail($id);
 
-        $validated = $request->validated();
-        unset($validated["hospital_id"]);
+        $patient->update($request->validated());
 
-        $patient->update($validated);
+        $patient->load([
+            "bloodGroup",
+            "bloodRequests" => function ($query) use ($hospitalId) {
+                $query->where("hospital_id", $hospitalId)
+                      ->orderByDesc("created_at")
+                      ->orderByDesc("id")
+                      ->limit(10);
+            },
+        ]);
 
         return response()->json([
-            "data" => new PatientResource($patient->fresh(["bloodGroup"])),
+            "data" => new PatientDetailResource($patient),
         ]);
     }
 }
