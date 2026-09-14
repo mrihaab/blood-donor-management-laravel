@@ -7,6 +7,18 @@ import * as AuthContextModule from "../auth/AuthContext";
 import { loginApi } from "../api/authApi";
 import { tokenStorage } from "../storage/tokenStorage";
 
+jest.mock("@react-navigation/native", () => {
+  const actualNav = jest.requireActual("@react-navigation/native");
+  return {
+    ...actualNav,
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      addListener: jest.fn(() => jest.fn()),
+    }),
+  };
+});
+
 jest.mock("../storage/tokenStorage", () => ({
   tokenStorage: {
     getToken: jest.fn(),
@@ -70,6 +82,7 @@ describe("Login & Dashboard Screen Component Tests", () => {
 
   beforeEach(() => {
     jest.restoreAllMocks();
+    (tokenStorage.getToken as jest.Mock).mockResolvedValue(null);
     (tokenStorage.clearToken as jest.Mock).mockResolvedValue(true);
     (tokenStorage.setToken as jest.Mock).mockResolvedValue(true);
   });
@@ -83,6 +96,10 @@ describe("Login & Dashboard Screen Component Tests", () => {
           <LoginScreen />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("password-input")).toBeTruthy();
+      });
 
       const passwordInput = screen.getByTestId("password-input");
       expect(passwordInput.props.secureTextEntry).toBe(true);
@@ -106,6 +123,10 @@ describe("Login & Dashboard Screen Component Tests", () => {
         </AuthProvider>
       );
 
+      await waitFor(() => {
+        expect(screen.getByTestId("login-submit-button")).toBeTruthy();
+      });
+
       const submitButton = screen.getByTestId("login-submit-button");
       expect(submitButton.props.accessibilityState.disabled).toBe(true);
       expect(loginApi).not.toHaveBeenCalled();
@@ -124,6 +145,10 @@ describe("Login & Dashboard Screen Component Tests", () => {
           <LoginScreen />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("email-input")).toBeTruthy();
+      });
 
       await act(async () => {
         fireEvent.changeText(screen.getByTestId("email-input"), "sarah@cyberdyne-health.org");
@@ -155,6 +180,10 @@ describe("Login & Dashboard Screen Component Tests", () => {
           <LoginScreen />
         </AuthProvider>
       );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("email-input")).toBeTruthy();
+      });
 
       await act(async () => {
         fireEvent.changeText(screen.getByTestId("email-input"), "sarah@cyberdyne-health.org");

@@ -7,6 +7,20 @@ import * as useDashboardModule from "../api/useDashboard";
 import { DashboardData } from "../api/dashboardApi";
 import { tokenStorage } from "../storage/tokenStorage";
 
+const mockNavigate = jest.fn();
+
+jest.mock("@react-navigation/native", () => {
+  const actualNav = jest.requireActual("@react-navigation/native");
+  return {
+    ...actualNav,
+    useNavigation: () => ({
+      navigate: mockNavigate,
+      dispatch: jest.fn(),
+      addListener: jest.fn(() => jest.fn()),
+    }),
+  };
+});
+
 jest.mock("../storage/tokenStorage", () => ({
   tokenStorage: {
     getToken: jest.fn(),
@@ -77,6 +91,7 @@ const createTestQueryClient = () =>
 describe("DashboardScreen Component Tests", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
+    mockNavigate.mockClear();
     (tokenStorage.clearToken as jest.Mock).mockResolvedValue(true);
     (tokenStorage.setToken as jest.Mock).mockResolvedValue(true);
 
@@ -209,5 +224,49 @@ describe("DashboardScreen Component Tests", () => {
     });
 
     expect(mockRefetch).toHaveBeenCalled();
+  });
+
+  test("5. Open Patient Directory button navigates to PatientList screen", async () => {
+    jest.spyOn(useDashboardModule, "useDashboard").mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as unknown as UseQueryResult<DashboardData, Error>);
+
+    const queryClient = createTestQueryClient();
+    const screen = await render(
+      <QueryClientProvider client={queryClient}>
+        <DashboardScreen />
+      </QueryClientProvider>
+    );
+
+    const directoryBtn = screen.getByTestId("open-patient-directory-button");
+    fireEvent.press(directoryBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("PatientList");
+  });
+
+  test("6. Total Patients KPI card navigates to PatientList screen", async () => {
+    jest.spyOn(useDashboardModule, "useDashboard").mockReturnValue({
+      data: mockDashboardData,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+      isRefetching: false,
+    } as unknown as UseQueryResult<DashboardData, Error>);
+
+    const queryClient = createTestQueryClient();
+    const screen = await render(
+      <QueryClientProvider client={queryClient}>
+        <DashboardScreen />
+      </QueryClientProvider>
+    );
+
+    const kpiCard = screen.getByTestId("kpi-total-patients-card");
+    fireEvent.press(kpiCard);
+    expect(mockNavigate).toHaveBeenCalledWith("PatientList");
   });
 });

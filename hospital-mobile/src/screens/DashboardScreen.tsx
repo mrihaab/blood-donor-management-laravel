@@ -9,13 +9,19 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors, spacing } from "../theme";
 import { useAuth } from "../auth/AuthContext";
 import { getSafeErrorMessage } from "../api/authApi";
 import { useDashboard } from "../api/useDashboard";
 import { DashboardRequisition } from "../api/dashboardApi";
+import { AuthenticatedStackParamList } from "../navigation/types";
+
+type NavigationProp = NativeStackNavigationProp<AuthenticatedStackParamList, "Dashboard">;
 
 export const DashboardScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
   const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -126,6 +132,19 @@ export const DashboardScreen: React.FC = () => {
           </View>
         ) : null}
 
+        {/* Quick Actions Bar */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.patientDirectoryButton}
+            onPress={() => navigation.navigate("PatientList")}
+            accessibilityRole="button"
+            accessibilityLabel="Open patient directory"
+            testID="open-patient-directory-button"
+          >
+            <Text style={styles.patientDirectoryButtonText}>👥 Open Patient Directory</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Hospital & Staff Profile Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
@@ -186,12 +205,18 @@ export const DashboardScreen: React.FC = () => {
         </View>
 
         <View style={styles.kpiGrid}>
-          <View style={styles.kpiCard}>
+          <TouchableOpacity
+            style={styles.kpiCard}
+            onPress={() => navigation.navigate("PatientList")}
+            accessibilityRole="button"
+            accessibilityLabel="Open patient directory via Total Patients KPI"
+            testID="kpi-total-patients-card"
+          >
             <Text style={styles.kpiValue} testID="kpi-total-patients">
               {kpis?.total_patients ?? 0}
             </Text>
-            <Text style={styles.kpiLabel}>Total Patients</Text>
-          </View>
+            <Text style={styles.kpiLabel}>Total Patients ›</Text>
+          </TouchableOpacity>
 
           <View style={styles.kpiCard}>
             <Text style={styles.kpiValue} testID="kpi-total-requisitions">
@@ -306,6 +331,26 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     marginTop: 2,
+  },
+  quickActionsContainer: {
+    marginBottom: spacing.md,
+  },
+  patientDirectoryButton: {
+    height: 48,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  patientDirectoryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   errorBanner: {
     backgroundColor: "#FEE2E2",
