@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Hospital\HospitalAuthController;
 use App\Http\Controllers\Api\V1\Hospital\HospitalDashboardController;
 use App\Http\Controllers\Api\V1\Hospital\HospitalLookupController;
+use App\Http\Controllers\Api\V1\Hospital\HospitalPatientController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,4 +34,9 @@ Route::prefix('v1/hospital')->middleware([
 ])->group(function () {
     Route::get('/blood-groups', [HospitalLookupController::class, 'bloodGroups']);
     Route::get('/dashboard', [HospitalDashboardController::class, 'index']);
+
+    Route::get('/patients', [HospitalPatientController::class, 'index']);
+    Route::post('/patients', [HospitalPatientController::class, 'store']);
+    Route::get('/patients/{id}', [HospitalPatientController::class, 'show']);
+    Route::put('/patients/{id}', [HospitalPatientController::class, 'update']);
 });
