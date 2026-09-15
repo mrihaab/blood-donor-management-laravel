@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Hospital\HospitalAuthController;
 use App\Http\Controllers\Api\V1\Hospital\HospitalDashboardController;
 use App\Http\Controllers\Api\V1\Hospital\HospitalLookupController;
 use App\Http\Controllers\Api\V1\Hospital\HospitalPatientController;
+use App\Http\Controllers\Api\V1\Hospital\HospitalRequisitionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,4 +40,8 @@ Route::prefix('v1/hospital')->middleware([
     Route::post('/patients', [HospitalPatientController::class, 'store']);
     Route::get('/patients/{id}', [HospitalPatientController::class, 'show']);
     Route::put('/patients/{id}', [HospitalPatientController::class, 'update']);
+
+    Route::get('/requisitions', [HospitalRequisitionController::class, 'index']);
+    Route::post('/requisitions', [HospitalRequisitionController::class, 'store']);
+    Route::get('/requisitions/{id}', [HospitalRequisitionController::class, 'show']);
 });

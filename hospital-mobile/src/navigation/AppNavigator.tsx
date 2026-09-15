@@ -8,6 +8,9 @@ import { DashboardScreen } from "../screens/DashboardScreen";
 import { PatientListScreen } from "../screens/PatientListScreen";
 import { PatientDetailScreen } from "../screens/PatientDetailScreen";
 import { PatientFormScreen } from "../screens/PatientFormScreen";
+import { RequisitionListScreen } from "../screens/RequisitionListScreen";
+import { RequisitionDetailScreen } from "../screens/RequisitionDetailScreen";
+import { RequisitionCreateScreen } from "../screens/RequisitionCreateScreen";
 import { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +32,9 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: "Patient Details" }} />
             <Stack.Screen name="PatientCreate" component={PatientFormScreen} options={{ title: "Register Patient" }} />
             <Stack.Screen name="PatientEdit" component={PatientFormScreen} options={{ title: "Edit Patient" }} />
+            <Stack.Screen name="RequisitionList" component={RequisitionListScreen} options={{ title: "Requisitions" }} />
+            <Stack.Screen name="RequisitionDetail" component={RequisitionDetailScreen} options={{ title: "Requisition Details" }} />
+            <Stack.Screen name="RequisitionCreate" component={RequisitionCreateScreen} options={{ title: "Create Requisition" }} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

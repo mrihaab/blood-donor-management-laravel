@@ -158,12 +158,30 @@ export const PatientDetailScreen: React.FC<PatientDetailScreenProps> = ({ route,
 
             {/* Requisitions Card */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Recent Blood Requisitions</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm }}>
+                <Text style={styles.cardTitle}>Recent Blood Requisitions</Text>
+                <TouchableOpacity
+                  style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: 6 }}
+                  onPress={() => navigation.navigate("RequisitionCreate", { patientId: patient.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create requisition for this patient"
+                  testID="create-patient-requisition-btn"
+                >
+                  <Text style={{ color: colors.surface, fontWeight: "600", fontSize: 12 }}>+ Request Blood</Text>
+                </TouchableOpacity>
+              </View>
 
               {requisitions.length > 0 ? (
                 <View style={styles.requisitionsList}>
                   {requisitions.map((req: PatientRequisitionSummary) => (
-                    <View key={req.id} style={styles.reqItem} testID="patient-requisition-item">
+                    <TouchableOpacity
+                      key={req.id}
+                      style={styles.reqItem}
+                      onPress={() => navigation.navigate("RequisitionDetail", { requisitionId: req.id })}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View details for requisition #${req.id}`}
+                      testID="patient-requisition-item"
+                    >
                       <View style={styles.reqTopRow}>
                         <Text style={styles.reqBloodText}>{req.blood_group}</Text>
                         <Text style={styles.reqUnitsText}>{req.units_needed} {req.units_needed === 1 ? "unit" : "units"}</Text>
@@ -175,7 +193,7 @@ export const PatientDetailScreen: React.FC<PatientDetailScreenProps> = ({ route,
                       {req.created_at ? (
                         <Text style={styles.reqDateText}>Requested: {req.created_at}</Text>
                       ) : null}
-                    </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               ) : (
@@ -334,14 +352,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  infoGrid: {
-    gap: spacing.sm,
-  },
+  infoGrid: {},
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 2,
+    marginBottom: spacing.sm,
   },
   infoLabel: {
     fontSize: 13,
@@ -376,15 +393,14 @@ const styles = StyleSheet.create({
   badgeTextArchived: { color: "#475569" },
   badgeDefault: { backgroundColor: "#DBEAFE" },
   badgeTextDefault: { color: "#1D4ED8" },
-  requisitionsList: {
-    gap: spacing.sm,
-  },
+  requisitionsList: {},
   reqItem: {
     backgroundColor: colors.background,
     borderRadius: 8,
     padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    marginBottom: spacing.sm,
   },
   reqTopRow: {
     flexDirection: "row",

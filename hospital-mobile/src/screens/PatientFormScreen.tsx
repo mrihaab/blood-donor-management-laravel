@@ -670,17 +670,17 @@ const styles = StyleSheet.create({
   },
   chipsRow: {
     flexDirection: "row",
-    gap: spacing.xs,
   },
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xs,
   },
   chip: {
     height: 44,
     minWidth: 44,
     paddingHorizontal: spacing.md,
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
     borderRadius: 8,
     backgroundColor: colors.background,
     borderWidth: 1,

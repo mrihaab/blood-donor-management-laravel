@@ -6,6 +6,9 @@ export type AuthenticatedStackParamList = {
   PatientDetail: { patientId: number };
   PatientCreate: undefined;
   PatientEdit: { patientId: number };
+  RequisitionList: undefined;
+  RequisitionDetail: { requisitionId: number };
+  RequisitionCreate: { patientId?: number } | undefined;
 };
 
 export type RootStackParamList = {
@@ -16,6 +19,9 @@ export type RootStackParamList = {
   PatientDetail: { patientId: number };
   PatientCreate: undefined;
   PatientEdit: { patientId: number };
+  RequisitionList: undefined;
+  RequisitionDetail: { requisitionId: number };
+  RequisitionCreate: { patientId?: number } | undefined;
 };
 
 export type DashboardScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "Dashboard">;
@@ -23,3 +29,6 @@ export type PatientListScreenProps = NativeStackScreenProps<AuthenticatedStackPa
 export type PatientDetailScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "PatientDetail">;
 export type PatientCreateScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "PatientCreate">;
 export type PatientEditScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "PatientEdit">;
+export type RequisitionListScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "RequisitionList">;
+export type RequisitionDetailScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "RequisitionDetail">;
+export type RequisitionCreateScreenProps = NativeStackScreenProps<AuthenticatedStackParamList, "RequisitionCreate">;

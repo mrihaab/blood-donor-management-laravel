@@ -141,7 +141,16 @@ export const DashboardScreen: React.FC = () => {
             accessibilityLabel="Open patient directory"
             testID="open-patient-directory-button"
           >
-            <Text style={styles.patientDirectoryButtonText}>👥 Open Patient Directory</Text>
+            <Text style={styles.patientDirectoryButtonText}>👥 Patient Directory</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.patientDirectoryButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate("RequisitionList")}
+            accessibilityRole="button"
+            accessibilityLabel="Open blood requisitions"
+            testID="open-requisitions-button"
+          >
+            <Text style={styles.patientDirectoryButtonText}>🩸 Blood Requisitions</Text>
           </TouchableOpacity>
         </View>
 
@@ -218,12 +227,18 @@ export const DashboardScreen: React.FC = () => {
             <Text style={styles.kpiLabel}>Total Patients ›</Text>
           </TouchableOpacity>
 
-          <View style={styles.kpiCard}>
+          <TouchableOpacity
+            style={styles.kpiCard}
+            onPress={() => navigation.navigate("RequisitionList")}
+            accessibilityRole="button"
+            accessibilityLabel="Open blood requisitions via Total Requisitions KPI"
+            testID="kpi-total-requisitions-card"
+          >
             <Text style={styles.kpiValue} testID="kpi-total-requisitions">
               {kpis?.total_requisitions ?? 0}
             </Text>
-            <Text style={styles.kpiLabel}>Total Requisitions</Text>
-          </View>
+            <Text style={styles.kpiLabel}>Requisitions ›</Text>
+          </TouchableOpacity>
 
           <View style={styles.kpiCard}>
             <Text style={[styles.kpiValue, { color: colors.warning }]} testID="kpi-pending-requisitions">
@@ -258,7 +273,14 @@ export const DashboardScreen: React.FC = () => {
               const urgencyStyle = getUrgencyBadgeStyle(req.urgency_level);
               const statusStyle = getStatusBadgeStyle(req.status);
               return (
-                <View key={req.id} style={styles.requisitionCard} testID="recent-requisition-item">
+                <TouchableOpacity
+                  key={req.id}
+                  style={styles.requisitionCard}
+                  onPress={() => navigation.navigate("RequisitionDetail", { requisitionId: req.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View requisition for ${req.patient_name}`}
+                  testID="recent-requisition-item"
+                >
                   <View style={styles.reqTopRow}>
                     <Text style={styles.patientName}>{req.patient_name}</Text>
                     <View style={styles.bloodBadge}>
@@ -289,7 +311,7 @@ export const DashboardScreen: React.FC = () => {
                   <View style={styles.reqFooterRow}>
                     <Text style={styles.dateText}>Requested: {req.created_at}</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -544,12 +566,12 @@ const styles = StyleSheet.create({
   },
   badgesGroup: {
     flexDirection: "row",
-    gap: 6,
   },
   badgeContainer: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    marginLeft: 6,
   },
   badgeText: {
     fontSize: 10,

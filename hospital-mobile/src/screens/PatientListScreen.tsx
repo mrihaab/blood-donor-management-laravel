@@ -364,12 +364,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.xs,
   },
   filterChip: {
     height: 36,
     minWidth: 44,
     paddingHorizontal: spacing.sm,
+    marginRight: spacing.xs,
     borderRadius: 18,
     backgroundColor: colors.background,
     borderWidth: 1,

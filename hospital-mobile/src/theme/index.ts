@@ -5,10 +5,13 @@ export const colors = {
   secondary: "#2563eb",
   background: "#f8fafc",
   card: "#ffffff",
+  surface: "#ffffff",
+  text: "#0f172a",
   textPrimary: "#0f172a",
   textSecondary: "#64748b",
   border: "#e2e8f0",
   danger: "#ef4444",
+  error: "#ef4444",
   success: "#22c55e",
   warning: "#f59e0b",
 };
